@@ -9,7 +9,7 @@ sources:
 tasks:
   - lint: |
       cd crystal-cbor
-      crystal tool format --chec
+      crystal tool format --check
   - test: |
       cd crystal-cbor
       crystal spec
