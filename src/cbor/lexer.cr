@@ -71,8 +71,8 @@ class CBOR::Lexer
     when 0x3b
       consume_int(to_negative_int(read(UInt64)))
     when 0x40..0x57
-      # Reads a single byte which is offset by 0x40
-      Token::BytesT.new(@current_byte_number, value: Bytes[current_byte - 0x40])
+      # read current_byte - 0x40 bytes ahead
+      consume_binary(current_byte - 0x40)
     when 0x58
       consume_binary(read(UInt8))
     when 0x59
