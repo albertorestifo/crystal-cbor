@@ -1,6 +1,8 @@
 require "./token"
 
 class CBOR::Lexer
+  BREAK = 0xff
+
   def self.new(string : String)
     new IO::Memory.new(string)
   end
@@ -10,11 +12,12 @@ class CBOR::Lexer
   end
 
   @token : Token::T
+  @current_pos : Int64
+  @token_finished : Bool
 
   def initialize(@io : IO)
-    @byte_number = 0
-    @current_byte_number = 0
-    @token = Token::NullT.new(0)
+    @current_pos = 0
+    @token = Token::UndefinedT.new(0)
     @token_finished = true
   end
 
@@ -44,7 +47,7 @@ class CBOR::Lexer
   end
 
   private def next_token
-    @current_byte_number = @byte_number
+    @current_pos = @io.pos.to_i64
     current_byte = next_byte
 
     case current_byte
@@ -81,27 +84,27 @@ class CBOR::Lexer
       consume_binary(read(UInt32))
     when 0x5b
       consume_binary(read(UInt64))
+    when 0x5f
+      Token::BytesArrayT.new(@current_pos)
     else
-      fail
+      raise ParseError.new("Unexpected first byte #{current_byte}")
     end
   end
 
   private def next_byte : UInt8
     byte = @io.read_byte
-    @byte_number += 1
-    fail unless byte
+    raise ParseError.new("Unexpected EOF at byte #{@io.pos}") unless byte
     byte
   end
 
   private def consume_int(value)
-    Token::IntT.new(@current_byte_number, value)
+    Token::IntT.new(@current_pos, value)
   end
 
   private def consume_binary(size)
     bytes = Bytes.new(size)
     @io.read_fully(bytes)
-    @byte_number += size
-    Token::BytesT.new(@current_byte_number, bytes)
+    Token::BytesT.new(@current_pos, bytes)
   end
 
   # Creates a method overloaded for each UInt sizes to convert the UInt into
@@ -127,11 +130,6 @@ class CBOR::Lexer
   {% end %}
 
   private def read(type : T.class) forall T
-    @byte_number += sizeof(T)
     @io.read_bytes(T, IO::ByteFormat::NetworkEndian)
-  end
-
-  private def fail
-    raise "Pase error"
   end
 end
