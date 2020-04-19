@@ -1,5 +1,7 @@
 # CBOR
 
+[![builds.sr.ht status](https://builds.sr.ht/~arestifo/crystal-cbor.svg)](https://builds.sr.ht/~arestifo/crystal-cbor?)
+
 This library implements the [RFC7049: Concise Binary Object Representation (CBOR)][rfc]
 in Crystal.
 
