@@ -14,8 +14,11 @@ class CBOR::Token
     case token
     when IntT
       token.value.to_s
+    when BytesT
+      return %(h'') if token.value.empty?
+      "h'#{token.value.hexstring}'"
     else
-      "NOT IMPLEMENTED YET!"
+      raise "Diagnostic notation for type #{token.class} not implemented"
     end
   end
 end
