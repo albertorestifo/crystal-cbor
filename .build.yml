@@ -1,0 +1,15 @@
+image: alpine/edge
+
+packages:
+  - crystal
+
+sources:
+  - https://git.sr.ht/~arestifo/crystal-cbor
+
+tasks:
+  - lint: |
+      cd crystal-cbor
+      crystal tool format --chec
+  - test: |
+      cd crystal-cbor
+      crystal spec
