@@ -4,6 +4,11 @@ version: 0.1.0
 authors:
   - Alberto Restifo <alberto@restifo.dev>
 
+description: "A CBOR library in pure Crystal, impleming RFC7049"
+
 crystal: 0.34.0
 
 license: MIT
+
+repository: https://git.sr.ht/~arestifo/crystal-cbor
+homepage: https://git.sr.ht/~arestifo/crystal-cbor

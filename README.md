@@ -12,7 +12,7 @@ in Crystal.
    ```yaml
    dependencies:
      cbor:
-       github: your-github-user/cbor
+       git: https://git.sr.ht/~arestifo/crystal-cbor
    ```
 
 2. Run `shards install`
