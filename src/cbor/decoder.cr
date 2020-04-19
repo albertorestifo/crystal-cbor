@@ -18,6 +18,8 @@ abstract class CBOR::Decoder
     when Token::StringT
       finish_token!
       token.value
+    when Token::ByteArrayT
+      # Consume the array :)
     end
   end
 end

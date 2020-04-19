@@ -1,6 +1,5 @@
 class CBOR::Token
   record NullT, byte_number : Int64
-  record UndefinedT, byte_number : Int64
   record BoolT, byte_number : Int64, value : Bool
   record ArrayT, byte_number : Int64, size : UInt32?
   record MapT, byte_number : Int64, size : UInt32?
@@ -11,7 +10,7 @@ class CBOR::Token
   record StringArrayT, byte_number : Int64
   record BytesArrayT, byte_number : Int64
 
-  alias T = NullT | UndefinedT | BoolT | ArrayT | MapT | IntT | FloatT | StringT | BytesT | StringArrayT | BytesArrayT
+  alias T = NullT | BoolT | ArrayT | MapT | IntT | FloatT | StringT | BytesT | StringArrayT | BytesArrayT
 
   def self.to_s(token : T)
     case token

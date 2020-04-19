@@ -17,7 +17,7 @@ class CBOR::Lexer
 
   def initialize(@io : IO)
     @current_pos = 0
-    @token = Token::UndefinedT.new(0)
+    @token = Token::NullT.new(0)
     @token_finished = true
   end
 
