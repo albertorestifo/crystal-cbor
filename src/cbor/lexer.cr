@@ -70,6 +70,17 @@ class CBOR::Lexer
       consume_int(to_negative_int(read(UInt32)))
     when 0x3b
       consume_int(to_negative_int(read(UInt64)))
+    when 0x40..0x57
+      # Reads a single byte which is offset by 0x40
+      Token::BytesT.new(@current_byte_number, value: Bytes[current_byte - 0x40])
+    when 0x58
+      consume_binary(read(UInt8))
+    when 0x59
+      consume_binary(read(UInt16))
+    when 0x5a
+      consume_binary(read(UInt32))
+    when 0x5b
+      consume_binary(read(UInt64))
     else
       fail
     end
@@ -85,6 +96,16 @@ class CBOR::Lexer
   private def consume_int(value)
     Token::IntT.new(@current_byte_number, value)
   end
+
+  private def consume_binary(size)
+    bytes = Bytes.new(size)
+    @io.read_fully(bytes)
+    @byte_number += size
+    Token::BytesT.new(@current_byte_number, bytes)
+  end
+
+  # Creates a method overloaded for each UInt sizes to convert the UInt into
+  # the respective Int capable of containing the value
 
   {% begin %}
     {% uints = %w(UInt8 UInt16 UInt32 UInt64) %}
