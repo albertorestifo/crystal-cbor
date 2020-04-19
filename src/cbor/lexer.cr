@@ -51,27 +51,31 @@ class CBOR::Lexer
     when 0x00..0x17
       consume_int(current_byte)
     when 0x18
-      consume_int(read(Uint8))
+      consume_int(read(UInt8))
     when 0x19
-      consume_int(read(Uint16))
+      consume_int(read(UInt16))
     when 0x1a
-      consume_int(read(Uint32))
+      consume_int(read(UInt32))
     when 0x1b
-      consume_int(read(Uint64))
+      consume_int(read(UInt64))
     when 0x20..0x37
-      consume_int(flip(current_byte.to_i8))
+      # This range represents values from -1..-24 so we subtract 0x20
+      # from the uint8 value to
+      consume_int(to_negative_int(current_byte.to_u8 - 0x20))
     when 0x38
-      consume_int(flip(read(Uint8).to_i8))
+      consume_int(to_negative_int(read(UInt8)))
     when 0x39
-      consume_int(flip(read(Uint16).to_i16))
+      consume_int(to_negative_int(read(UInt16)))
     when 0x3a
-      consume_int(flip(read(Uint32).to_i32))
+      consume_int(to_negative_int(read(UInt32)))
     when 0x3b
-      consume_int(flip(read(Uint64).to_i64))
+      consume_int(to_negative_int(read(UInt64)))
+    else
+      fail
     end
   end
 
-  private def next_byte : Uint8
+  private def next_byte : UInt8
     byte = @io.read_byte
     @byte_number += 1
     fail unless byte
@@ -82,9 +86,24 @@ class CBOR::Lexer
     Token::IntT.new(@current_byte_number, value)
   end
 
-  private def flip(value)
-    -1 - value
-  end
+  {% begin %}
+    {% uints = %w(UInt8 UInt16 UInt32 UInt64) %}
+    {% conv = %w(to_i8 to_i16 to_i32 to_i64 to_i128) %}
+
+    {% for uint, index in uints %}
+      # Reads the `{{uint.id}}` as a negative integer, returning the samllest
+      # integer capable of containing the value.
+      def to_negative_int(value : {{uint.id}})
+        int = begin
+                -value.{{conv[index].id}}
+              rescue OverflowError
+                -value.{{conv[index + 1].id}}
+              end
+
+        int - 1
+      end
+    {% end %}
+  {% end %}
 
   private def read(type : T.class) forall T
     @byte_number += sizeof(T)
