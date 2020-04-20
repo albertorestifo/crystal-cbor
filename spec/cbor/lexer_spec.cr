@@ -24,7 +24,7 @@ describe CBOR::Lexer do
         it "reads #{tt[:bytes].hexstring} as #{tt[:value].to_s}" do
           lexer = CBOR::Lexer.new(tt[:bytes])
 
-          token = lexer.read_token
+          token = lexer.next_token
           token.should be_a(CBOR::Token::IntT)
           token.as(CBOR::Token::IntT).value.should eq(tt[:value])
         end

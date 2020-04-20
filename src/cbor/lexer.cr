@@ -11,44 +11,19 @@ class CBOR::Lexer
     new IO::Memory.new(slice)
   end
 
-  @token : Token::T
   @current_pos : Int64
-  @token_finished : Bool
+  @eof : Bool = false
 
   def initialize(@io : IO)
     @current_pos = 0
-    @token = Token::NullT.new(0)
-    @token_finished = true
   end
 
-  @[AlwaysInline]
-  def current_token : Token::T
-    if @token_finished
-      @token_finished = false
-      @token = next_token
-    else
-      @token
-    end
-  end
+  def next_token
+    return nil if @eof
 
-  @[AlwaysInline]
-  def finish_token!
-    @token_finished = true
-  end
-
-  @[AlwaysInline]
-  def read_token : Token::T
-    if @token_finished
-      @token = next_token
-    else
-      finish_token!
-    end
-    @token
-  end
-
-  private def next_token
     @current_pos = @io.pos.to_i64
-    current_byte = next_byte
+    current_byte = @io.read_byte
+    return nil unless current_byte
 
     case current_byte
     when 0x00..0x17
@@ -85,16 +60,23 @@ class CBOR::Lexer
     when 0x5b
       consume_binary(read(UInt64))
     when 0x5f
-      Token::BytesArrayT.new(@current_pos)
+      Token::BytesArrayStartT.new(@current_pos)
+    when 0xff
+      # TODO: Define which segment it's breaking
+      Token::BreakT.new(@current_pos)
     else
-      raise ParseError.new("Unexpected first byte #{current_byte}")
+      raise ParseError.new("Unexpected first byte 0x#{current_byte.to_s(16)}")
     end
   end
 
-  private def next_byte : UInt8
+  private def next_byte : UInt8?
     byte = @io.read_byte
-    raise ParseError.new("Unexpected EOF at byte #{@io.pos}") unless byte
-    byte
+    if byte
+      byte
+    else
+      @eof = true
+      nil
+    end
   end
 
   private def consume_int(value)

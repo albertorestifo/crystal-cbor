@@ -1,5 +1,6 @@
 class CBOR::Token
   record NullT, byte_number : Int64
+  record UndefinedT, byte_number : Int64
   record BoolT, byte_number : Int64, value : Bool
   record ArrayT, byte_number : Int64, size : UInt32?
   record MapT, byte_number : Int64, size : UInt32?
@@ -7,12 +8,26 @@ class CBOR::Token
   record FloatT, byte_number : Int64, value : Float64
   record StringT, byte_number : Int64, value : String
   record BytesT, byte_number : Int64, value : Bytes
-  record StringArrayT, byte_number : Int64
-  record BytesArrayT, byte_number : Int64
+  record StringArrayStartT, byte_number : Int64
+  record StringArrayEndT, byte_number : Int64
+  record BytesArrayStartT, byte_number : Int64
+  record BytesArrayEndT, byte_number : Int64
 
-  alias T = NullT | BoolT | ArrayT | MapT | IntT | FloatT | StringT | BytesT | StringArrayT | BytesArrayT
+  alias T = NullT |
+            UndefinedT |
+            BoolT |
+            ArrayT |
+            MapT |
+            IntT |
+            FloatT |
+            StringT |
+            BytesT |
+            StringArrayStartT |
+            StringArrayEndT |
+            BytesArrayStartT |
+            BytesArrayEndT
 
-  def self.to_s(token : T)
+  def self.to_diagnostic(token : T) : String
     case token
     when IntT
       token.value.to_s
@@ -23,8 +38,24 @@ class CBOR::Token
       "null"
     when UndefinedT
       "undefined"
+    when BoolT
+      token.value.to_s
+    when BytesArrayStartT
+      "(_ "
+    when BytesArrayEndT
+      ")"
+    when FloatT
+      "TODO"
+    when StringT
+      "TODO"
+    when StringArrayT
+      "TODO"
+    when MapT
+      "TODO"
+    when ArrayT
+      "TODO"
     else
-      raise "Diagnostic notation for type #{token.class} not implemented"
+      raise "Uknown diagnostics representation for #{token.class}"
     end
   end
 end

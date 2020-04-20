@@ -12,4 +12,4 @@ tasks:
       crystal tool format --check
   - test: |
       cd crystal-cbor
-      crystal spec
+      crystal spec --error-on-warnings

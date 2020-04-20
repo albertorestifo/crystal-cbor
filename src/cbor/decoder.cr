@@ -22,4 +22,25 @@ abstract class CBOR::Decoder
       # Consume the array :)
     end
   end
+
+  private def read_bytes_array_body
+    read_type(Token::ByteArrayT) do |token|
+    end
+  end
+
+  private macro read_type(type, finish_token = true, &block)
+    case token = current_token
+    when {{type}}
+      {% if finish_token %}finish_token!{% end %}
+      {{ block.body }}
+    else
+      unexpected_token(token, {{type.stringify.split("::").last}})
+    end
+  end
+
+  private def unexpected_token(token, expected = nil)
+    message = "Unexpected token #{Token.to_s(token)}"
+    message += " expected #{expected}" if expected
+    raise TypeCastError.new(message, token.byte_number)
+  end
 end
