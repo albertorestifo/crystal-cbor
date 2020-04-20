@@ -1,8 +1,6 @@
 require "./token"
 
 class CBOR::Lexer
-  BREAK = 0xff
-
   def self.new(string : String)
     new IO::Memory.new(string)
   end
@@ -13,6 +11,10 @@ class CBOR::Lexer
 
   @current_pos : Int64
   @eof : Bool = false
+  # Holds a list of previously opened tokens.
+  # When a break in reached, the last entry in the array is
+  # the token to close.
+  @open_tokens = [] of Token::T
 
   def initialize(@io : IO)
     @current_pos = 0
@@ -60,10 +62,9 @@ class CBOR::Lexer
     when 0x5b
       consume_binary(read(UInt64))
     when 0x5f
-      Token::BytesArrayStartT.new(@current_pos)
+      open_token(Token::BytesArrayT.new(@current_pos))
     when 0xff
-      # TODO: Define which segment it's breaking
-      Token::BreakT.new(@current_pos)
+      finish_token
     else
       raise ParseError.new("Unexpected first byte 0x#{current_byte.to_s(16)}")
     end
@@ -87,6 +88,26 @@ class CBOR::Lexer
     bytes = Bytes.new(size)
     @io.read_fully(bytes)
     Token::BytesT.new(@current_pos, bytes)
+  end
+
+  private def open_token(token : Token::T) : Token::T
+    @open_tokens.push(token)
+    token
+  end
+
+  private def finish_token : Token::T
+    opened_token = @open_tokens.pop
+
+    case opened_token
+    when Token::ArrayT
+      Token::ArrayEndT.new(@current_pos)
+    when Token::BytesArrayT
+      Token::BytesArrayEndT.new(@current_pos)
+    when Token::StringArrayT
+      Token::StringArrayEndT.new(@current_pos)
+    else
+      raise ParseError.new("Unexpected token termination #{opened_token.class}")
+    end
   end
 
   # Creates a method overloaded for each UInt sizes to convert the UInt into

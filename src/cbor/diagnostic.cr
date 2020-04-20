@@ -6,7 +6,6 @@ require "./token"
 # provided in the RFC and ensuring a correct functioning of the `CBOR::Lexer`.
 class CBOR::Diagnostic
   @lexer : Lexer
-  @is_array : Bool = false
 
   def initialize(input)
     @lexer = Lexer.new(input)
@@ -29,17 +28,23 @@ class CBOR::Diagnostic
     return nil unless token
 
     case token
-    when Token::BytesArray
-      @is_array = true
-    when Token::BreakT
-      @is_array = flase
+    when Token::BytesArrayT
+      consume_bytes_array
+    else
+      Token.to_diagnostic(token)
     end
-
-    separator + Token.to_diagnostic(token)
   end
 
-  private def separator : String
-    return ", " if @is_array
-    ""
+  private def consume_bytes_array : String
+    elements = [] of String
+
+    loop do
+      token = @lexer.next_token
+      raise "Unexpected EOF" unless token
+      break if token.is_a?(Token::BytesArrayEndT)
+      elements << Token.to_diagnostic(token)
+    end
+
+    "(_ #{elements.join(", ")})"
   end
 end
