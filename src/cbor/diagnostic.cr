@@ -15,36 +15,21 @@ class CBOR::Diagnostic
   # represation of the input.
   def to_s : String
     result = ""
-
-    while val = next_value
-      result += val
+    while value = next_value
+      result << value
     end
-
     result
   end
 
   private def next_value : String?
-    token = @lexer.next_token
+    token = @lexer.read_next
     return nil unless token
 
-    case token
-    when Token::BytesArrayT
-      consume_bytes_array
+    case token[:kind]
+    when Kind::BytesArray
+      BytesArray.new(token[:value]).to_diagnostics
     else
-      Token.to_diagnostic(token)
+      Token.do_diagnostics(token)
     end
-  end
-
-  private def consume_bytes_array : String
-    elements = [] of String
-
-    loop do
-      token = @lexer.next_token
-      raise "Unexpected EOF" unless token
-      break if token.is_a?(Token::BytesArrayEndT)
-      elements << Token.to_diagnostic(token)
-    end
-
-    "(_ #{elements.join(", ")})"
   end
 end

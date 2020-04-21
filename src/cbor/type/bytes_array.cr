@@ -1,4 +1,8 @@
 class CBOR::BytesArray < Array(UInt8)
+  def self.new(bytes : Bytes)
+    new(bytes.to_a)
+  end
+
   def to_a : Array(UInt8)
     self.as(Array(UInt8))
   end

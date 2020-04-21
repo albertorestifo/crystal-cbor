@@ -14,17 +14,62 @@ class CBOR::Lexer
   # Holds a list of previously opened tokens.
   # When a break in reached, the last entry in the array is
   # the token to close.
-  @open_tokens = [] of Token::T
+  @open_tokens = [] of Kind
 
   def initialize(@io : IO)
     @current_pos = 0
   end
 
-  def next_token
+  # Reads the next concrete value
+  def read_value : Type?
+    res = read_next
+    return nil unless res
+    res[:value]
+  end
+
+  # Readsn the next concrete value, returning the token kind.
+  # Useful when you need to differentiate between Null and Undefined.
+  def read_next : Token?
+    return nil if @eof
+
+    token = next_token
+    return nil unless token
+
+    case token[:kind]
+    when Kind::Int,
+         Kind::String,
+         Kind::Bool,
+         Kind::Float,
+         Kind::Bytes
+      token
+    when Kind::Null,
+         Kind::Undefined
+      {kind: token[:kind], value: nil}
+    when Kind::BytesArray
+      {kind: token[:kind], value: read_bytes_array}
+    end
+  end
+
+  # Consumes the bytes array until it reaches a break
+  def read_bytes_array : Bytes
+    bytes = BytesArray.new
+
+    loop do
+      token = next_token
+      raise ParseError.new("Unexpected EOF while reading bytes array") unless token
+      break if token[:kind] == Kind::BytesArrayEnd
+      raise ParseError.new("Illegal token #{token.class} while reading bytes array") unless token[:kind] == Kind::Bytes
+      bytes << token[:value].as(UInt8)
+    end
+
+    bytes.to_bytes
+  end
+
+  private def next_token : Token?
     return nil if @eof
 
     @current_pos = @io.pos.to_i64
-    current_byte = @io.read_byte
+    current_byte = next_byte
     return nil unless current_byte
 
     case current_byte
@@ -62,9 +107,9 @@ class CBOR::Lexer
     when 0x5b
       consume_binary(read(UInt64))
     when 0x5f
-      open_token(Token::BytesArrayT.new(@current_pos))
+      {kind: open_token(Kind::BytesArray), value: nil}
     when 0xff
-      finish_token
+      {kind: finish_token, value: nil}
     else
       raise ParseError.new("Unexpected first byte 0x#{current_byte.to_s(16)}")
     end
@@ -81,32 +126,32 @@ class CBOR::Lexer
   end
 
   private def consume_int(value)
-    Token::IntT.new(@current_pos, value)
+    {kind: Kind::Int, value: value}
   end
 
   private def consume_binary(size)
     bytes = Bytes.new(size)
     @io.read_fully(bytes)
-    Token::BytesT.new(@current_pos, bytes)
+    {kind: Kind::Bytes, value: bytes}
   end
 
-  private def open_token(token : Token::T) : Token::T
-    @open_tokens.push(token)
-    token
+  private def open_token(kind : Kind) : Kind
+    @open_tokens << kind
+    kind
   end
 
-  private def finish_token : Token::T
+  private def finish_token : Kind
     opened_token = @open_tokens.pop
 
     case opened_token
-    when Token::ArrayT
-      Token::ArrayEndT.new(@current_pos)
-    when Token::BytesArrayT
-      Token::BytesArrayEndT.new(@current_pos)
-    when Token::StringArrayT
-      Token::StringArrayEndT.new(@current_pos)
+    when Kind::Array
+      Kind::ArrayEnd
+    when Kind::BytesArray
+      Kind::BytesArrayEnd
+    when Kind::StringArray
+      Kind::StringArrayEnd
     else
-      raise ParseError.new("Unexpected token termination #{opened_token.class}")
+      raise ParseError.new("Unexpected token termination #{opened_token.to_s}")
     end
   end
 

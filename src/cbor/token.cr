@@ -1,63 +1,50 @@
-class CBOR::Token
-  record NullT, byte_number : Int64
-  record UndefinedT, byte_number : Int64
-  record BoolT, byte_number : Int64, value : Bool
-  record ArrayT, byte_number : Int64, size : UInt32?
-  record ArrayEndT, byte_number : Int64
-  record MapT, byte_number : Int64, size : UInt32?
-  record IntT, byte_number : Int64, value : Int8 | UInt8 | Int16 | UInt16 | Int32 | UInt32 | Int64 | UInt64 | Int128
-  record FloatT, byte_number : Int64, value : Float64
-  record StringT, byte_number : Int64, value : String
-  record BytesT, byte_number : Int64, value : Bytes
-  record StringArrayT, byte_number : Int64
-  record StringArrayEndT, byte_number : Int64
-  record BytesArrayT, byte_number : Int64
-  record BytesArrayEndT, byte_number : Int64
+enum CBOR::Kind
+  Null
+  Undefined
+  Bool
+  Int
+  Float
+  Bytes
+  BytesArray
+  BytesArrayEnd
+  String
+  StringArray
+  StringArrayEnd
+  Array
+  ArrayEnd
+  Map
 
-  alias T = NullT |
-            UndefinedT |
-            BoolT |
-            ArrayT |
-            ArrayEndT |
-            MapT |
-            IntT |
-            FloatT |
-            StringT |
-            BytesT |
-            StringArrayT |
-            StringArrayEndT |
-            BytesArrayT |
-            BytesArrayEndT
-
-  def self.to_diagnostic(token : T) : String
-    case token
-    when IntT
+  def to_diagnostic : String
+    case self
+    when Int
       token.value.to_s
-    when BytesT
+    when Bytes
       return %(h'') if token.value.empty?
       "h'#{token.value.hexstring}'"
-    when NullT
+    when Null
       "null"
-    when UndefinedT
+    when Undefined
       "undefined"
     when BoolT
       token.value.to_s
-    when BytesArrayT
+    when BytesArray
       "(_ "
-    when BytesArrayEndT
+    when BytesArrayEnd
       ")"
-    when FloatT
+    when Float
       "TODO"
-    when StringT
+    when String
       "TODO"
-    when StringArrayT
+    when StringArray
       "TODO"
-    when MapT
+    when Map
       "TODO"
-    when ArrayT
+    when Array
       "TODO"
     else
-      raise "Uknown diagnostics representation for #{token.class}"
+      raise "Uknown diagnostics representation for #{self.to_s}"
     end
   end
 end
+
+alias CBOR::Token = NamedTuple(kind: Kind, value: Type)
