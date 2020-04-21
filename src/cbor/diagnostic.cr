@@ -28,6 +28,8 @@ class CBOR::Diagnostic
     case token[:kind]
     when Kind::Int
       token[:value].to_s
+    when Kind::String
+      %("#{token[:value].as(String)}")
     when Kind::Bytes
       "h'#{token[:value].as(Bytes).hexstring}'"
     when Kind::BytesArray

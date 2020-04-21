@@ -108,6 +108,16 @@ class CBOR::Lexer
       consume_binary(read(UInt64))
     when 0x5f
       {kind: open_token(Kind::BytesArray), value: nil}
+    when 0x60..0x77
+      consume_string(current_byte - 0x60)
+    when 0x78
+      consume_string(read(UInt8))
+    when 0x79
+      consume_string(read(UInt16))
+    when 0x7a
+      consume_string(read(UInt32))
+    when 0x7b
+      consume_string(read(UInt16))
     when 0xff
       {kind: finish_token, value: nil}
     else
@@ -130,9 +140,12 @@ class CBOR::Lexer
   end
 
   private def consume_binary(size)
-    bytes = Bytes.new(size)
-    @io.read_fully(bytes)
+    bytes = read_bytes(size)
     {kind: Kind::Bytes, value: bytes}
+  end
+
+  private def consume_string(size)
+    {kind: Kind::String, value: @io.read_string(size)}
   end
 
   private def open_token(kind : Kind) : Kind
@@ -176,6 +189,12 @@ class CBOR::Lexer
       end
     {% end %}
   {% end %}
+
+  private def read_bytes(size)
+    bytes = Bytes.new(size)
+    @io.read_fully(bytes)
+    bytes
+  end
 
   private def read(type : T.class) forall T
     @io.read_bytes(T, IO::ByteFormat::NetworkEndian)
