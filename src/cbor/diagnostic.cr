@@ -16,7 +16,7 @@ class CBOR::Diagnostic
   def to_s : String
     result = ""
     while value = next_value
-      result << value
+      result += value
     end
     result
   end
@@ -26,10 +26,14 @@ class CBOR::Diagnostic
     return nil unless token
 
     case token[:kind]
+    when Kind::Int
+      token[:value].to_s
+    when Kind::Bytes
+      "h'#{token[:value].as(Bytes).hexstring}'"
     when Kind::BytesArray
-      BytesArray.new(token[:value]).to_diagnostics
+      token[:value].as(BytesArray).to_diagnostic
     else
-      Token.do_diagnostics(token)
+      token[:kind].to_s
     end
   end
 end

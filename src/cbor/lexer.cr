@@ -51,7 +51,7 @@ class CBOR::Lexer
   end
 
   # Consumes the bytes array until it reaches a break
-  def read_bytes_array : Bytes
+  def read_bytes_array : CBOR::BytesArray
     bytes = BytesArray.new
 
     loop do
@@ -59,10 +59,10 @@ class CBOR::Lexer
       raise ParseError.new("Unexpected EOF while reading bytes array") unless token
       break if token[:kind] == Kind::BytesArrayEnd
       raise ParseError.new("Illegal token #{token.class} while reading bytes array") unless token[:kind] == Kind::Bytes
-      bytes << token[:value].as(UInt8)
+      bytes << token[:value].as(Bytes)
     end
 
-    bytes.to_bytes
+    bytes
   end
 
   private def next_token : Token?

@@ -1,21 +1,23 @@
-class CBOR::BytesArray < Array(UInt8)
-  def self.new(bytes : Bytes)
-    new(bytes.to_a)
-  end
-
-  def to_a : Array(UInt8)
-    self.as(Array(UInt8))
-  end
-
+class CBOR::BytesArray < Array(Bytes)
   def to_bytes : Bytes
-    Bytes.new(self.to_unsafe, self.size)
+    size = reduce(0) { |acc, chunk| acc + chunk.size }
+    bytes = Bytes.new(size)
+
+    # Copy each chunk into the new bytes slice
+    ptr = bytes.to_unsafe
+    each do |chunk|
+      chunk.copy_to(ptr, chunk.size)
+      ptr += chunk.size
+    end
+
+    bytes
   end
 
   def to_diagnostic : String
-    "(_ #{map(&to_byte_diagnostic).join(", ")})"
+    "(_ #{map { |chunk| to_byte_diagnostic(chunk) }.join(", ")})"
   end
 
-  private def to_byte_diagnostic(i : UInt8) : String
-    "h'#{i.hexstring}'"
+  private def to_byte_diagnostic(chunk : Bytes) : String
+    "h'#{chunk.hexstring}'"
   end
 end
