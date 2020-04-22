@@ -1,10 +1,6 @@
 class CBOR::Lexer
   BREAK = 0xff
 
-  def self.new(string : String)
-    new IO::Memory.new(string)
-  end
-
   def self.new(slice : Bytes)
     new IO::Memory.new(slice)
   end
