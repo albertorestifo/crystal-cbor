@@ -25,19 +25,19 @@ class CBOR::Diagnostic
     token = @lexer.read_next
     return nil unless token
 
-    case token[:kind]
+    case token.kind
     when Kind::Int
-      token[:value].to_s
+      token.value.to_s
     when Kind::String
-      %("#{token[:value].as(String)}")
+      %("#{token.value.as(String)}")
     when Kind::Bytes
-      "h'#{token[:value].as(Bytes).hexstring}'"
+      "h'#{token.value.as(Bytes).hexstring}'"
     when Kind::BytesArray
-      token[:value].as(BytesArray).to_diagnostic
+      token.value.as(BytesArray).to_diagnostic
     when Kind::StringArray
-      token[:value].as(StringArray).to_diagnostic
+      token.value.as(StringArray).to_diagnostic
     else
-      token[:kind].to_s
+      token.kind.to_s
     end
   end
 end

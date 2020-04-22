@@ -15,4 +15,4 @@ enum CBOR::Kind
   Map
 end
 
-alias CBOR::Token = NamedTuple(kind: Kind, value: Lexer::Type)
+record CBOR::Token, kind : Kind, value : Lexer::Type, size : Int64? = nil

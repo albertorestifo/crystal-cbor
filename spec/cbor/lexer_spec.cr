@@ -28,8 +28,8 @@ describe CBOR::Lexer do
           token.should_not be_nil
           next unless token
 
-          token[:kind].should eq(CBOR::Kind::Int)
-          token[:value].as(Int).should eq(tt[:value])
+          token.kind.should eq(CBOR::Kind::Int)
+          token.value.as(Int).should eq(tt[:value])
         end
       end
     end

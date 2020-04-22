@@ -6,8 +6,8 @@ class CBOR::Lexer
                Bool |
                String |
                Bytes |
-               Array(Type) |
-               Hash(Type, Type) |
+               Array(CBOR::Type) |
+               Hash(CBOR::Type, CBOR::Type) |
                Int8 |
                UInt8 |
                Int16 |
@@ -43,10 +43,10 @@ class CBOR::Lexer
   def read_value : Type?
     res = read_next
     return nil unless res
-    res[:value]
+    res.value
   end
 
-  # Readsn the next concrete value, returning the token kind.
+  # Reads the next concrete value, returning the token kind.
   # Useful when you need to differentiate between Null and Undefined.
   def read_next : Token?
     return nil if @eof
@@ -54,7 +54,7 @@ class CBOR::Lexer
     token = next_token
     return nil unless token
 
-    case token[:kind]
+    case token.kind
     when Kind::Int,
          Kind::String,
          Kind::Bool,
@@ -63,11 +63,11 @@ class CBOR::Lexer
       token
     when Kind::Null,
          Kind::Undefined
-      {kind: token[:kind], value: nil}
+      Token.new(kind: token.kind, value: nil)
     when Kind::BytesArray
-      {kind: token[:kind], value: read_bytes_array}
+      Token.new(kind: token.kind, value: read_bytes_array)
     when Kind::StringArray
-      {kind: token[:kind], value: read_string_array}
+      Token.new(kind: token.kind, value: read_string_array)
     end
   end
 
@@ -135,7 +135,7 @@ class CBOR::Lexer
     when 0x5b
       consume_binary(read(UInt64))
     when 0x5f
-      {kind: open_token(Kind::BytesArray), value: nil}
+      Token.new(kind: open_token(Kind::BytesArray), value: nil)
     when 0x60..0x77
       consume_string(current_byte - 0x60)
     when 0x78
@@ -147,9 +147,11 @@ class CBOR::Lexer
     when 0x7b
       consume_string(read(UInt16))
     when 0x7f
-      {kind: open_token(Kind::StringArray), value: nil}
+      Token.new(kind: open_token(Kind::StringArray), value: nil)
     when 0xff
-      {kind: finish_token, value: nil}
+      Token.new(kind: finish_token, value: nil)
+    when 0x80..0x97
+      consume_array(current_byte - 0x80)
     else
       raise ParseError.new("Unexpected first byte 0x#{current_byte.to_s(16)}")
     end
@@ -161,13 +163,13 @@ class CBOR::Lexer
     loop do
       token = next_token
       raise ParseError.new("Unexpected EOF") unless token
-      break if token[:kind] == stop
+      break if token.kind == stop
 
-      if only && token[:kind] != only
-        raise ParseError.new("Illegal token #{token[:kind].to_s} while reading #{only.to_s} array")
+      if only && token.kind != only
+        raise ParseError.new("Illegal token #{token.kind.to_s} while reading #{only.to_s} array")
       end
 
-      yield token[:value]
+      yield token.value
     end
   end
 
@@ -182,16 +184,21 @@ class CBOR::Lexer
   end
 
   private def consume_int(value)
-    {kind: Kind::Int, value: value}
+    Token.new(kind: Kind::Int, value: value)
   end
 
   private def consume_binary(size)
     bytes = read_bytes(size)
-    {kind: Kind::Bytes, value: bytes}
+    Token.new(kind: Kind::Bytes, value: bytes)
   end
 
   private def consume_string(size)
-    {kind: Kind::String, value: @io.read_string(size)}
+    Token.new(kind: Kind::String, value: @io.read_string(size))
+  end
+
+  private def consume_array(size)
+    arr = Array(CBOR::Type).new(size)
+    Token.new(kind: Kind::Array, value: arr)
   end
 
   private def open_token(kind : Kind) : Kind
