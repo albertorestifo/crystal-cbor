@@ -1,6 +1,25 @@
 require "./token"
 
 class CBOR::Lexer
+  # Types returned by the lexer
+  alias Type = Nil |
+               Bool |
+               String |
+               Bytes |
+               Array(Type) |
+               Hash(Type, Type) |
+               Int8 |
+               UInt8 |
+               Int16 |
+               UInt16 |
+               Int32 |
+               UInt32 |
+               Int64 |
+               UInt64 |
+               Int128 |
+               BytesArray |
+               StringArray
+
   def self.new(string : String)
     new IO::Memory.new(string)
   end
@@ -47,6 +66,8 @@ class CBOR::Lexer
       {kind: token[:kind], value: nil}
     when Kind::BytesArray
       {kind: token[:kind], value: read_bytes_array}
+    when Kind::StringArray
+      {kind: token[:kind], value: read_string_array}
     end
   end
 
@@ -54,15 +75,22 @@ class CBOR::Lexer
   def read_bytes_array : CBOR::BytesArray
     bytes = BytesArray.new
 
-    loop do
-      token = next_token
-      raise ParseError.new("Unexpected EOF while reading bytes array") unless token
-      break if token[:kind] == Kind::BytesArrayEnd
-      raise ParseError.new("Illegal token #{token.class} while reading bytes array") unless token[:kind] == Kind::Bytes
-      bytes << token[:value].as(Bytes)
+    read_until(Kind::BytesArrayEnd, only: Kind::Bytes) do |chunk|
+      bytes << chunk.as(Bytes)
     end
 
     bytes
+  end
+
+  # Reads until break for chunks of strings
+  def read_string_array : CBOR::StringArray
+    strings = StringArray.new
+
+    read_until(Kind::StringArrayEnd, only: Kind::String) do |chunk|
+      strings << chunk.as(String)
+    end
+
+    strings
   end
 
   private def next_token : Token?
@@ -118,10 +146,28 @@ class CBOR::Lexer
       consume_string(read(UInt32))
     when 0x7b
       consume_string(read(UInt16))
+    when 0x7f
+      {kind: open_token(Kind::StringArray), value: nil}
     when 0xff
       {kind: finish_token, value: nil}
     else
       raise ParseError.new("Unexpected first byte 0x#{current_byte.to_s(16)}")
+    end
+  end
+
+  # Reads tokens until it meets the stop kind.
+  # Optionally it can fail when the read token is not of the passed kind.
+  private def read_until(stop : Kind, only : Kind?, &block)
+    loop do
+      token = next_token
+      raise ParseError.new("Unexpected EOF") unless token
+      break if token[:kind] == stop
+
+      if only && token[:kind] != only
+        raise ParseError.new("Illegal token #{token[:kind].to_s} while reading #{only.to_s} array")
+      end
+
+      yield token[:value]
     end
   end
 

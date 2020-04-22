@@ -34,6 +34,8 @@ class CBOR::Diagnostic
       "h'#{token[:value].as(Bytes).hexstring}'"
     when Kind::BytesArray
       token[:value].as(BytesArray).to_diagnostic
+    when Kind::StringArray
+      token[:value].as(StringArray).to_diagnostic
     else
       token[:kind].to_s
     end

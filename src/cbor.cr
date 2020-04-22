@@ -19,6 +19,5 @@ module CBOR
                UInt32 |
                Int64 |
                UInt64 |
-               Int128 |
-               BytesArray
+               Int128
 end
