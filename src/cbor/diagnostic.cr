@@ -1,6 +1,3 @@
-require "./lexer"
-require "./token"
-
 # Reads a CBOR input into a diagnostic string.
 # This consumes the IO and is mostly usedful to tests again the example
 # provided in the RFC and ensuring a correct functioning of the `CBOR::Lexer`.
@@ -29,15 +26,48 @@ class CBOR::Diagnostic
     when Kind::Int
       token.value.to_s
     when Kind::String
-      %("#{token.value.as(String)}")
+      if token.chunks
+        chunks = chunks(token.value.as(String), token.chunks.as(Array(Int32)))
+        "(_ #{chunks.map { |s| string(s) }.join(", ")})"
+      else
+        string(token.value.as(String))
+      end
     when Kind::Bytes
-      "h'#{token.value.as(Bytes).hexstring}'"
-    when Kind::BytesArray
-      token.value.as(BytesArray).to_diagnostic
-    when Kind::StringArray
-      token.value.as(StringArray).to_diagnostic
+      if token.chunks
+        chunks = chunks(token.value.as(Bytes), token.chunks.as(Array(Int32)))
+        "(_ #{chunks.map { |b| bytes(b) }.join(", ")})"
+      else
+        bytes(token.value.as(Bytes))
+      end
     else
       token.kind.to_s
     end
+  end
+
+  private def chunks(value : Bytes, chunks : Array(Int32)) : Array(Bytes)
+    res = Array(Bytes).new
+    bytes = value.to_a
+    chunks.each do |size|
+      bytes_chunk = bytes.shift(size)
+      res << Bytes.new(bytes_chunk.to_unsafe, bytes_chunk.size)
+    end
+    res
+  end
+
+  private def chunks(value : String, chunks : Array(Int32)) : Array(String)
+    res = Array(String).new
+    arr = value.split("")
+    chunks.each do |size|
+      res << arr.shift(size).join
+    end
+    res
+  end
+
+  private def bytes(b : Bytes) : String
+    "h'#{b.hexstring}'"
+  end
+
+  private def string(s : String) : String
+    %("#{s}")
   end
 end

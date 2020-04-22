@@ -12,12 +12,4 @@ class CBOR::BytesArray < Array(Bytes)
 
     bytes
   end
-
-  def to_diagnostic : String
-    "(_ #{map { |chunk| to_byte_diagnostic(chunk) }.join(", ")})"
-  end
-
-  private def to_byte_diagnostic(chunk : Bytes) : String
-    "h'#{chunk.hexstring}'"
-  end
 end

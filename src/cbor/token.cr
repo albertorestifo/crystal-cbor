@@ -15,4 +15,10 @@ enum CBOR::Kind
   Map
 end
 
-record CBOR::Token, kind : Kind, value : Lexer::Type, size : Int64? = nil
+record CBOR::Token,
+  kind : Kind,
+  value : Type,
+  size : Int32? = nil,
+  # Used only for BytesArray and StringArray: it contains the size of each
+  # chunks composing the type
+  chunks : Array(Int32)? = nil

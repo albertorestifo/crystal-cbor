@@ -1,25 +1,4 @@
-require "./token"
-
 class CBOR::Lexer
-  # Types returned by the lexer
-  alias Type = Nil |
-               Bool |
-               String |
-               Bytes |
-               Array(CBOR::Type) |
-               Hash(CBOR::Type, CBOR::Type) |
-               Int8 |
-               UInt8 |
-               Int16 |
-               UInt16 |
-               Int32 |
-               UInt32 |
-               Int64 |
-               UInt64 |
-               Int128 |
-               BytesArray |
-               StringArray
-
   def self.new(string : String)
     new IO::Memory.new(string)
   end
@@ -65,32 +44,57 @@ class CBOR::Lexer
          Kind::Undefined
       Token.new(kind: token.kind, value: nil)
     when Kind::BytesArray
-      Token.new(kind: token.kind, value: read_bytes_array)
+      read_bytes_array
     when Kind::StringArray
-      Token.new(kind: token.kind, value: read_string_array)
+      read_string_array
+    when Kind::Array
+      read_array(token)
     end
   end
 
   # Consumes the bytes array until it reaches a break
-  def read_bytes_array : CBOR::BytesArray
+  def read_bytes_array : Token
     bytes = BytesArray.new
+    chunks = Array(Int32).new
 
-    read_until(Kind::BytesArrayEnd, only: Kind::Bytes) do |chunk|
-      bytes << chunk.as(Bytes)
+    read_until(Kind::BytesArrayEnd, only: Kind::Bytes) do |c|
+      chunk = c.as(Bytes)
+      chunks << chunk.size
+      bytes << chunk
     end
 
-    bytes
+    Token.new(
+      kind: Kind::Bytes,
+      value: bytes.to_bytes,
+      chunks: chunks,
+    )
   end
 
   # Reads until break for chunks of strings
-  def read_string_array : CBOR::StringArray
-    strings = StringArray.new
+  def read_string_array : Token
+    value = ""
+    chunks = Array(Int32).new
 
-    read_until(Kind::StringArrayEnd, only: Kind::String) do |chunk|
-      strings << chunk.as(String)
+    read_until(Kind::StringArrayEnd, only: Kind::String) do |c|
+      chunk = c.as(String)
+      chunks << chunk.size
+      value += chunk
     end
 
-    strings
+    Token.new(
+      kind: Kind::String,
+      value: value,
+      chunks: chunks,
+    )
+  end
+
+  def read_array(token : Token) : Token
+    if token.size.nil?
+      token.size.not_nil!.times { token.value.as(Array(Type)) << read_value }
+    else
+      read_until(Kind::ArrayEnd) { |element| token.value.as(Array(Type)) << element }
+    end
+    token
   end
 
   private def next_token : Token?
@@ -151,7 +155,7 @@ class CBOR::Lexer
     when 0xff
       Token.new(kind: finish_token, value: nil)
     when 0x80..0x97
-      consume_array(current_byte - 0x80)
+      array_start(current_byte - 0x80)
     else
       raise ParseError.new("Unexpected first byte 0x#{current_byte.to_s(16)}")
     end
@@ -159,7 +163,7 @@ class CBOR::Lexer
 
   # Reads tokens until it meets the stop kind.
   # Optionally it can fail when the read token is not of the passed kind.
-  private def read_until(stop : Kind, only : Kind?, &block)
+  private def read_until(stop : Kind, only : Kind? = nil, &block)
     loop do
       token = next_token
       raise ParseError.new("Unexpected EOF") unless token
@@ -187,7 +191,9 @@ class CBOR::Lexer
     Token.new(kind: Kind::Int, value: value)
   end
 
-  private def consume_binary(size)
+  private def consume_binary(size : Int)
+    raise ParseError.new("Maximum size for binary array exeeded") if size > Int32::MAX
+
     bytes = read_bytes(size)
     Token.new(kind: Kind::Bytes, value: bytes)
   end
@@ -196,9 +202,10 @@ class CBOR::Lexer
     Token.new(kind: Kind::String, value: @io.read_string(size))
   end
 
-  private def consume_array(size)
-    arr = Array(CBOR::Type).new(size)
-    Token.new(kind: Kind::Array, value: arr)
+  private def array_start(size)
+    raise ParseError.new("Maximum size for array exeeded") if size > Int32::MAX
+    s = size.to_i32
+    Token.new(kind: Kind::Array, value: Array(Type).new(s), size: s)
   end
 
   private def open_token(kind : Kind) : Kind
