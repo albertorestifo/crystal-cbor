@@ -21,7 +21,10 @@ class CBOR::Diagnostic
   private def next_value : String?
     token = @lexer.read_next
     return nil unless token
+    to_diagnostic(token)
+  end
 
+  private def to_diagnostic(token : Token) : String
     case token.kind
     when Kind::Int
       token.value.to_s
@@ -39,6 +42,14 @@ class CBOR::Diagnostic
       else
         bytes(token.value.as(Bytes))
       end
+      # when Kind::Array
+      #   value = token.value.as(Array(Type))
+      #   return "[]" unless value.size > 0
+
+      #   content = value.map { |token| to_diagnostic(token) }.join(", ")
+
+      #   return "[#{content}]" if token.size
+      #   "[_ #{content}]"
     else
       token.kind.to_s
     end

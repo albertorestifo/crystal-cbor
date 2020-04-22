@@ -90,9 +90,9 @@ class CBOR::Lexer
 
   def read_array(token : Token) : Token
     if token.size.nil?
-      token.size.not_nil!.times { token.value.as(Array(Type)) << read_value }
-    else
       read_until(Kind::ArrayEnd) { |element| token.value.as(Array(Type)) << element }
+    else
+      token.size.not_nil!.times { token.value.as(Array(Type)) << read_value }
     end
     token
   end
@@ -152,10 +152,20 @@ class CBOR::Lexer
       consume_string(read(UInt16))
     when 0x7f
       Token.new(kind: open_token(Kind::StringArray), value: nil)
-    when 0xff
-      Token.new(kind: finish_token, value: nil)
     when 0x80..0x97
       array_start(current_byte - 0x80)
+    when 0x98
+      array_start(read(UInt8))
+    when 0x99
+      array_start(read(UInt16))
+    when 0x9a
+      array_start(read(UInt32))
+    when 0x9b
+      array_start(read(UInt64))
+    when 0x9f
+      Token.new(kind: open_token(Kind::Array), value: nil)
+    when 0xff
+      Token.new(kind: finish_token, value: nil)
     else
       raise ParseError.new("Unexpected first byte 0x#{current_byte.to_s(16)}")
     end
