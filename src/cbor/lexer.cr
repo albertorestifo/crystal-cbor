@@ -1,4 +1,6 @@
 class CBOR::Lexer
+  BREAK = 0xff
+
   def self.new(string : String)
     new IO::Memory.new(string)
   end
@@ -7,235 +9,127 @@ class CBOR::Lexer
     new IO::Memory.new(slice)
   end
 
-  @current_pos : Int64
   @eof : Bool = false
-  # Holds a list of previously opened tokens.
-  # When a break in reached, the last entry in the array is
-  # the token to close.
-  @open_tokens = [] of Kind
+  @current_byte : UInt8 = 0
 
   def initialize(@io : IO)
-    @current_pos = 0
   end
 
-  # Reads the next concrete value
-  def read_value : Type?
-    res = read_next
-    return nil unless res
-    res.value
-  end
-
-  # Reads the next concrete value, returning the token kind.
-  # Useful when you need to differentiate between Null and Undefined.
-  def read_next : Token?
+  def next_token : Token::T?
     return nil if @eof
 
-    token = next_token
-    return nil unless token
+    byte = next_byte
+    return nil unless byte
 
-    case token.kind
-    when Kind::Int,
-         Kind::String,
-         Kind::Bool,
-         Kind::Float,
-         Kind::Bytes
-      token
-    when Kind::Null,
-         Kind::Undefined
-      Token.new(kind: token.kind, value: nil)
-    when Kind::BytesArray
+    decode(byte)
+  end
+
+  private def decode(byte : UInt8) : Token::T
+    case byte
+    when 0x00..0x1b
+      consume_int(read_size(byte))
+    when 0x20..0x3b
+      consume_int(to_negative_int(read_size(byte - 0x20)))
+    when 0x40..0x5b
+      consume_binary(read_size(byte - 0x40))
+    when 0x5f
       read_bytes_array
-    when Kind::StringArray
+    when 0x60..0x7b
+      consume_string(read_size(byte - 0x60))
+    when 0x7f
       read_string_array
-    when Kind::Array
-      read_array(token)
+    when 0x80..0x97
+      array_start(read_size(byte - 0x80))
+    when 0x9f
+      Token::ArrayT.new
+    else
+      raise ParseError.new("Unexpected first byte 0x#{byte.to_s(16)}")
     end
   end
 
-  # Consumes the bytes array until it reaches a break
-  def read_bytes_array : Token
+  private def read_bytes_array : Token::BytesT
     bytes = BytesArray.new
     chunks = Array(Int32).new
 
-    read_until(Kind::BytesArrayEnd, only: Kind::Bytes) do |c|
-      chunk = c.as(Bytes)
-      chunks << chunk.size
-      bytes << chunk
+    until_break do |token|
+      unless token.is_a?(Token::BytesT)
+        raise ParseError.new("Invalid token #{token.class} while parsing a bytes array")
+      end
+
+      chunks << token.value.size
+      bytes << token.value
     end
 
-    Token.new(
-      kind: Kind::Bytes,
-      value: bytes.to_bytes,
-      chunks: chunks,
-    )
+    Token::BytesT.new(value: bytes.to_bytes, chunks: chunks)
   end
 
-  # Reads until break for chunks of strings
-  def read_string_array : Token
+  private def read_string_array : Token::StringT
     value = ""
     chunks = Array(Int32).new
 
-    read_until(Kind::StringArrayEnd, only: Kind::String) do |c|
-      chunk = c.as(String)
-      chunks << chunk.size
-      value += chunk
-    end
-
-    Token.new(
-      kind: Kind::String,
-      value: value,
-      chunks: chunks,
-    )
-  end
-
-  def read_array(token : Token) : Token
-    if token.size.nil?
-      read_until(Kind::ArrayEnd) { |element| token.value.as(Array(Type)) << element }
-    else
-      token.size.not_nil!.times { token.value.as(Array(Type)) << read_value }
-    end
-    token
-  end
-
-  private def next_token : Token?
-    return nil if @eof
-
-    @current_pos = @io.pos.to_i64
-    current_byte = next_byte
-    return nil unless current_byte
-
-    case current_byte
-    when 0x00..0x17
-      consume_int(current_byte)
-    when 0x18
-      consume_int(read(UInt8))
-    when 0x19
-      consume_int(read(UInt16))
-    when 0x1a
-      consume_int(read(UInt32))
-    when 0x1b
-      consume_int(read(UInt64))
-    when 0x20..0x37
-      # This range represents values from -1..-24 so we subtract 0x20
-      # from the uint8 value to
-      consume_int(to_negative_int(current_byte.to_u8 - 0x20))
-    when 0x38
-      consume_int(to_negative_int(read(UInt8)))
-    when 0x39
-      consume_int(to_negative_int(read(UInt16)))
-    when 0x3a
-      consume_int(to_negative_int(read(UInt32)))
-    when 0x3b
-      consume_int(to_negative_int(read(UInt64)))
-    when 0x40..0x57
-      # read current_byte - 0x40 bytes ahead
-      consume_binary(current_byte - 0x40)
-    when 0x58
-      consume_binary(read(UInt8))
-    when 0x59
-      consume_binary(read(UInt16))
-    when 0x5a
-      consume_binary(read(UInt32))
-    when 0x5b
-      consume_binary(read(UInt64))
-    when 0x5f
-      Token.new(kind: open_token(Kind::BytesArray), value: nil)
-    when 0x60..0x77
-      consume_string(current_byte - 0x60)
-    when 0x78
-      consume_string(read(UInt8))
-    when 0x79
-      consume_string(read(UInt16))
-    when 0x7a
-      consume_string(read(UInt32))
-    when 0x7b
-      consume_string(read(UInt16))
-    when 0x7f
-      Token.new(kind: open_token(Kind::StringArray), value: nil)
-    when 0x80..0x97
-      array_start(current_byte - 0x80)
-    when 0x98
-      array_start(read(UInt8))
-    when 0x99
-      array_start(read(UInt16))
-    when 0x9a
-      array_start(read(UInt32))
-    when 0x9b
-      array_start(read(UInt64))
-    when 0x9f
-      Token.new(kind: open_token(Kind::Array), value: nil)
-    when 0xff
-      Token.new(kind: finish_token, value: nil)
-    else
-      raise ParseError.new("Unexpected first byte 0x#{current_byte.to_s(16)}")
-    end
-  end
-
-  # Reads tokens until it meets the stop kind.
-  # Optionally it can fail when the read token is not of the passed kind.
-  private def read_until(stop : Kind, only : Kind? = nil, &block)
-    loop do
-      token = next_token
-      raise ParseError.new("Unexpected EOF") unless token
-      break if token.kind == stop
-
-      if only && token.kind != only
-        raise ParseError.new("Illegal token #{token.kind.to_s} while reading #{only.to_s} array")
+    until_break do |token|
+      unless token.is_a?(Token::StringT)
+        raise ParseError.new("Invalid token #{token.class} while parsing a string array")
       end
 
-      yield token.value
+      chunks << token.value.size
+      value += token.value
+    end
+
+    Token::StringT.new(value: value, chunks: chunks)
+  end
+
+  private def until_break(&block : Token::T ->)
+    loop do
+      byte = next_byte
+      raise ParseError.new("unexpected EOF while searching for break") unless byte
+      break if byte == BREAK
+      yield decode(byte)
+    end
+  end
+
+  # Reads the size for the next token type
+  private def read_size(current_byte : UInt8) : Int
+    case current_byte
+    when 0x00..0x17
+      current_byte
+    when 0x18
+      read(UInt8)
+    when 0x19
+      read(UInt16)
+    when 0x1a
+      read(UInt32)
+    when 0x1b
+      read(UInt64)
+    else
+      raise ParseError.new("Unexpected byte 0x#{current_byte.to_s(16)} while reading size")
     end
   end
 
   private def next_byte : UInt8?
     byte = @io.read_byte
-    if byte
-      byte
-    else
-      @eof = true
-      nil
-    end
+    return byte if byte
+
+    @eof = true
+    nil
   end
 
   private def consume_int(value)
-    Token.new(kind: Kind::Int, value: value)
+    Token::IntT.new(value: value)
   end
 
   private def consume_binary(size : Int)
-    raise ParseError.new("Maximum size for binary array exeeded") if size > Int32::MAX
-
     bytes = read_bytes(size)
-    Token.new(kind: Kind::Bytes, value: bytes)
+    Token::BytesT.new(value: bytes)
   end
 
   private def consume_string(size)
-    Token.new(kind: Kind::String, value: @io.read_string(size))
+    Token::StringT.new(value: @io.read_string(size))
   end
 
   private def array_start(size)
     raise ParseError.new("Maximum size for array exeeded") if size > Int32::MAX
-    s = size.to_i32
-    Token.new(kind: Kind::Array, value: Array(Type).new(s), size: s)
-  end
-
-  private def open_token(kind : Kind) : Kind
-    @open_tokens << kind
-    kind
-  end
-
-  private def finish_token : Kind
-    opened_token = @open_tokens.pop
-
-    case opened_token
-    when Kind::Array
-      Kind::ArrayEnd
-    when Kind::BytesArray
-      Kind::BytesArrayEnd
-    when Kind::StringArray
-      Kind::StringArrayEnd
-    else
-      raise ParseError.new("Unexpected token termination #{opened_token.to_s}")
-    end
+    Token::ArrayT.new(size: size.to_i32)
   end
 
   # Creates a method overloaded for each UInt sizes to convert the UInt into

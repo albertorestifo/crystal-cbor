@@ -19,28 +19,28 @@ class CBOR::Diagnostic
   end
 
   private def next_value : String?
-    token = @lexer.read_next
+    token = @lexer.next_token
     return nil unless token
     to_diagnostic(token)
   end
 
-  private def to_diagnostic(token : Token) : String
-    case token.kind
-    when Kind::Int
+  private def to_diagnostic(token : Token::T) : String
+    case token
+    when Token::IntT
       token.value.to_s
-    when Kind::String
+    when Token::StringT
       if token.chunks
-        chunks = chunks(token.value.as(String), token.chunks.as(Array(Int32)))
+        chunks = chunks(token.value, token.chunks.not_nil!)
         "(_ #{chunks.map { |s| string(s) }.join(", ")})"
       else
-        string(token.value.as(String))
+        string(token.value)
       end
-    when Kind::Bytes
+    when Token::BytesT
       if token.chunks
-        chunks = chunks(token.value.as(Bytes), token.chunks.as(Array(Int32)))
+        chunks = chunks(token.value, token.chunks.not_nil!)
         "(_ #{chunks.map { |b| bytes(b) }.join(", ")})"
       else
-        bytes(token.value.as(Bytes))
+        bytes(token.value)
       end
       # when Kind::Array
       #   value = token.value.as(Array(Type))
@@ -51,7 +51,7 @@ class CBOR::Diagnostic
       #   return "[#{content}]" if token.size
       #   "[_ #{content}]"
     else
-      token.kind.to_s
+      token.inspect
     end
   end
 
