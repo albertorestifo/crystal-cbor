@@ -50,9 +50,10 @@ class CBOR::Diagnostic
       hash_body = read_hash(token.size).join(", ")
       return "{#{hash_body}}" if token.size
       "{_ #{hash_body}}"
-    when Token::BoolT
-      return "true" if token.value
-      "false"
+    when Token::SimpleValueT
+      token.value.to_diagnostic
+    when Token::TagT
+      "#{token.value.value.to_s}(#{next_value})"
     else
       token.inspect
     end

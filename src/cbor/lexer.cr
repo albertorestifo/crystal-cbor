@@ -82,10 +82,8 @@ class CBOR::Lexer
     when 0xc0..0xdb
       consume_tag(read_size(byte - 0xc0))
       ##################
-    when 0xf4
-      Token::BoolT.new(value: false)
-    when 0xf5
-      Token::BoolT.new(value: true)
+    when 0xe0..0xf8
+      consume_simple_value(read_size(byte - 0xe0))
     else
       raise ParseError.new("Unexpected first byte 0x#{byte.to_s(16)}")
     end
@@ -172,9 +170,14 @@ class CBOR::Lexer
     Token::MapT.new(size: size.to_i32)
   end
 
-  private def consume_tag(size) : Token::TagT
-    raise ParseError.new("Maximum size for tag exceeded") if size > UInt32::MAX
-    Token::TagT.new(id: size.to_u32)
+  private def consume_tag(id) : Token::TagT
+    raise ParseError.new("Maximum size for tag ID exceeded") if id > UInt32::MAX
+    Token::TagT.new(value: Tag.new(id.to_u32))
+  end
+
+  private def consume_simple_value(id) : Token::SimpleValueT
+    raise ParseError.new("Invalid simple value #{id.to_s}") if id > 255
+    Token::SimpleValueT.new(value: SimpleValue.new(id.to_u8))
   end
 
   # Creates a method overloaded for each UInt sizes to convert the UInt into
