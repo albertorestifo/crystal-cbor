@@ -79,6 +79,8 @@ class CBOR::Lexer
       map_start(read_size(byte - 0xa0))
     when 0xbf
       Token::MapT.new
+    when 0xc0..0xdb
+      consume_tag(read_size(byte - 0xc0))
       ##################
     when 0xf4
       Token::BoolT.new(value: false)
@@ -168,6 +170,11 @@ class CBOR::Lexer
   private def map_start(size)
     raise ParseError.new("Maximum size for array exeeded") if size > Int32::MAX
     Token::MapT.new(size: size.to_i32)
+  end
+
+  private def consume_tag(size) : Token::TagT
+    raise ParseError.new("Maximum size for tag exceeded") if size > UInt32::MAX
+    Token::TagT.new(id: size.to_u32)
   end
 
   # Creates a method overloaded for each UInt sizes to convert the UInt into

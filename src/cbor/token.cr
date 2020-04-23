@@ -7,6 +7,7 @@ module CBOR::Token
   record StringT, value : String, chunks : Array(Int32)? = nil
   record ArrayT, size : Int32? = nil
   record MapT, size : Int32? = nil
+  record TagT, id : UInt32
 
   alias T = NullT |
             BoolT |
@@ -15,5 +16,6 @@ module CBOR::Token
             BytesT |
             StringT |
             ArrayT |
-            MapT
+            MapT |
+            TagT
 end
