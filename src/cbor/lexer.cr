@@ -20,12 +20,40 @@ class CBOR::Lexer
     decode(byte)
   end
 
+  # Read the next pair of tokens, useful for maps.
+  # Raises an exception if there are no two pairs left.
+  def next_pair : Tuple(Token::T, Token::T)
+    pairs = Array(Token::T).new(2) do
+      token = next_token
+      raise ParseError.new("Unexpected EOF while reading next pair") unless token
+      token
+    end
+    Tuple.new(pairs[0], pairs[1])
+  end
+
   def until_break(&block : Token::T ->)
     loop do
       byte = next_byte
       raise ParseError.new("unexpected EOF while searching for break") unless byte
       break if byte == BREAK
       yield decode(byte)
+    end
+  end
+
+  # Read a pair of values until a break is reached
+  def pairs_until_break(&block : Tuple(Token::T, Token::T) ->)
+    loop do
+      key_byte = next_byte
+      raise ParseError.new("Unexpected EOF while searching for break") unless key_byte
+      break if key_byte == BREAK
+
+      key = decode(key_byte)
+      raise ParseError.new("Unexpected EOF while reading key in pairs") unless key
+
+      value = next_token
+      raise ParseError.new("Unexpected EOF while reading value in pairs") unless value
+
+      yield Tuple.new(key, value)
     end
   end
 
@@ -47,6 +75,15 @@ class CBOR::Lexer
       array_start(read_size(byte - 0x80))
     when 0x9f
       Token::ArrayT.new
+    when 0xa0..0xbb
+      map_start(read_size(byte - 0xa0))
+    when 0xbf
+      Token::MapT.new
+      ##################
+    when 0xf4
+      Token::BoolT.new(value: false)
+    when 0xf5
+      Token::BoolT.new(value: true)
     else
       raise ParseError.new("Unexpected first byte 0x#{byte.to_s(16)}")
     end
@@ -126,6 +163,11 @@ class CBOR::Lexer
   private def array_start(size)
     raise ParseError.new("Maximum size for array exeeded") if size > Int32::MAX
     Token::ArrayT.new(size: size.to_i32)
+  end
+
+  private def map_start(size)
+    raise ParseError.new("Maximum size for array exeeded") if size > Int32::MAX
+    Token::MapT.new(size: size.to_i32)
   end
 
   # Creates a method overloaded for each UInt sizes to convert the UInt into

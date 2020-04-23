@@ -46,6 +46,13 @@ class CBOR::Diagnostic
       arr = read_array(token.size)
       return "[#{arr.join(", ")}]" if token.size
       "[_ #{arr.join(", ")}]"
+    when Token::MapT
+      hash_body = read_hash(token.size).join(", ")
+      return "{#{hash_body}}" if token.size
+      "{_ #{hash_body}}"
+    when Token::BoolT
+      return "true" if token.value
+      "false"
     else
       token.inspect
     end
@@ -65,6 +72,24 @@ class CBOR::Diagnostic
     end
 
     arr
+  end
+
+  # Reads the hash, returning an array of key-pairs strings already
+  # correctly formatted in the diagnostic notation
+  private def read_hash(size : Int32?) : Array(String)
+    key_pairs = Array(String).new
+
+    if size
+      size.times { key_pairs << key_value(*@lexer.next_pair) }
+    else
+      @lexer.pairs_until_break { |pairs| key_pairs << key_value(*pairs) }
+    end
+
+    key_pairs
+  end
+
+  private def key_value(key : Token::T, value : Token::T) : String
+    "#{to_diagnostic(key)}: #{to_diagnostic(value)}"
   end
 
   private def chunks(value : Bytes, chunks : Array(Int32)) : Array(Bytes)
