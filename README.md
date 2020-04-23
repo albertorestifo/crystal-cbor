@@ -5,6 +5,11 @@
 This library implements the [RFC7049: Concise Binary Object Representation (CBOR)][rfc]
 in Crystal.
 
+## Features
+
+- Full RFC7049 support
+- Full support for diagnostic notation
+
 ## Limitations
 
 ### Maximum Array/String array/Bytes array length
@@ -14,15 +19,6 @@ to be a `UInt64`.
 
 While this library supports lengths expressed as a `UInt64`, it must not exceed
 `Int32::MAX`.
-
-### Diagnostic notation
-
-While this library implements a diagnostic notation to be able to run against
-the examples provided in the RFC, the diagnostic notation is not fully
-spec-compliant:
-
-- Indefinite length items are not marked with the starting underscore but
-  represented as their finite counterparts.
 
 ## Installation
 
