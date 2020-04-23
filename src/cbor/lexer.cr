@@ -81,9 +81,14 @@ class CBOR::Lexer
       Token::MapT.new
     when 0xc0..0xdb
       consume_tag(read_size(byte - 0xc0))
-      ##################
     when 0xe0..0xf8
       consume_simple_value(read_size(byte - 0xe0))
+    when 0xf9
+      raise ParseError.new("Half-precision floating points are not supported")
+    when 0xfa
+      Token::FloatT.new(value: read(Float32))
+    when 0xfb
+      Token::FloatT.new(value: read(Float64))
     else
       raise ParseError.new("Unexpected first byte 0x#{byte.to_s(16)}")
     end

@@ -1,14 +1,6 @@
 require "./spec_helper"
 
 # All those tests have been exported from the RFC7049 appendix A.
-#
-# Some test results have been modified as the tool doesn't support
-# the full diagnostic notation as per RFC.
-#
-# Specifically:
-#
-# * Removed the undescore marking the start of infinite stirngs, bytes and
-#   array. This implementation doesn't expose the difference between the two.
 
 tests = [
   { %(0), "00" },
@@ -32,25 +24,25 @@ tests = [
   # { %(0.0), "f9 00 00" },
   # { %(-0.0), "f9 80 00" },
   # { %(1.0), "f9 3c 00" },
-  # { %(1.1), "fb 3f f1 99 99 99 99 99 9a" },
+  { %(1.1), "fb 3f f1 99 99 99 99 99 9a" },
   # { %(1.5), "f9 3e 00" },
   # { %(65504.0), "f9 7b ff" },
-  # { %(100000.0), "fa 47 c3 50 00" },
-  # { %(3.4028234663852886e+38), "fa 7f 7f ff ff" },
-  # { %(1.0e+300), "fb 7e 37 e4 3c 88 00 75 9c" },
+  { %(100000.0), "fa 47 c3 50 00" },
+  # { %(3.4028234663852886e+38), "fa 7f 7f ff ff" }, TODO: Not precise enough?
+  { %(1.0e+300), "fb 7e 37 e4 3c 88 00 75 9c" },
   # { %(5.960464477539063e-8), "f9 00 01" },
   # { %(0.00006103515625), "f9 04 00" },
   # { %(-4.0), "f9 c4 00" },
-  # { %(-4.1), "fb c0 10 66 66 66 66 66 66" },
+  { %(-4.1), "fb c0 10 66 66 66 66 66 66" },
   # { %(Infinity), "f9 7c 00" },
   # { %(NaN), "f9 7e 00" },
   # { %(-Infinity), "f9 fc 00" },
-  # { %(Infinity), "fa 7f 80 00 00" },
-  # { %(NaN), "fa 7f c0 00 00" },
-  # { %(-Infinity), "fa ff 80 00 00" },
-  # { %(Infinity), "fb 7f f0 00 00 00 00 00 00" },
-  # { %(NaN), "fb 7f f8 00 00 00 00 00 00" },
-  # { %(-Infinity), "fb ff f0 00 00 00 00 00 00" },
+  { %(Infinity), "fa 7f 80 00 00" },
+  { %(NaN), "fa 7f c0 00 00" },
+  { %(-Infinity), "fa ff 80 00 00" },
+  { %(Infinity), "fb 7f f0 00 00 00 00 00 00" },
+  { %(NaN), "fb 7f f8 00 00 00 00 00 00" },
+  { %(-Infinity), "fb ff f0 00 00 00 00 00 00" },
   { %(false), "f4" },
   { %(true), "f5" },
   { %(null), "f6" },

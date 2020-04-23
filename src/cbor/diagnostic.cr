@@ -54,6 +54,20 @@ class CBOR::Diagnostic
       token.value.to_diagnostic
     when Token::TagT
       "#{token.value.value.to_s}(#{next_value})"
+    when Token::FloatT
+      return "NaN" if token.value.nan?
+      return token.value.to_s if token.value.finite?
+
+      case value = token.value
+      when Float32
+        return "Infinity" if value == Float32::INFINITY
+        "-Infinity"
+      when Float64
+        return "Infinity" if value == Float64::INFINITY
+        "-Infinity"
+      else
+        token.value.to_s
+      end
     else
       token.inspect
     end

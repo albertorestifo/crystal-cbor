@@ -9,8 +9,15 @@ in Crystal.
 
 - Full RFC7049 support
 - Full support for diagnostic notation
+- Assign a field to a type base on the CBOR tag
+- Support for a wide range of IANA CBOR Tags
 
 ## Limitations
+
+### Half-precision floating point is not supported
+
+Crystal doesn't have a `Float16` type, so half-precision floating point numbers
+are not supported for the time being.
 
 ### Maximum Array/String array/Bytes array length
 

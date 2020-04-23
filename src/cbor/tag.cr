@@ -6,6 +6,10 @@ enum CBOR::Tag : UInt32
   Decimal
   BigFloat
 
+  CSOEEnCrypt = 16
+  CSOEMac
+  CSOESign
+
   ConvertBase64URL = 21
   ConvertBase64
   ConvertBase16
@@ -16,6 +20,7 @@ enum CBOR::Tag : UInt32
   Base64
   RegularExpression
   MimeMessage
+  UUID
 
   CBORMarker = 55799
 end
