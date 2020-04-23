@@ -20,6 +20,15 @@ class CBOR::Lexer
     decode(byte)
   end
 
+  def until_break(&block : Token::T ->)
+    loop do
+      byte = next_byte
+      raise ParseError.new("unexpected EOF while searching for break") unless byte
+      break if byte == BREAK
+      yield decode(byte)
+    end
+  end
+
   private def decode(byte : UInt8) : Token::T
     case byte
     when 0x00..0x1b
@@ -34,7 +43,7 @@ class CBOR::Lexer
       consume_string(read_size(byte - 0x60))
     when 0x7f
       read_string_array
-    when 0x80..0x97
+    when 0x80..0x9b
       array_start(read_size(byte - 0x80))
     when 0x9f
       Token::ArrayT.new
@@ -73,15 +82,6 @@ class CBOR::Lexer
     end
 
     Token::StringT.new(value: value, chunks: chunks)
-  end
-
-  private def until_break(&block : Token::T ->)
-    loop do
-      byte = next_byte
-      raise ParseError.new("unexpected EOF while searching for break") unless byte
-      break if byte == BREAK
-      yield decode(byte)
-    end
   end
 
   # Reads the size for the next token type

@@ -42,17 +42,29 @@ class CBOR::Diagnostic
       else
         bytes(token.value)
       end
-      # when Kind::Array
-      #   value = token.value.as(Array(Type))
-      #   return "[]" unless value.size > 0
-
-      #   content = value.map { |token| to_diagnostic(token) }.join(", ")
-
-      #   return "[#{content}]" if token.size
-      #   "[_ #{content}]"
+    when Token::ArrayT
+      arr = read_array(token.size)
+      return "[#{arr.join(", ")}]" if token.size
+      "[_ #{arr.join(", ")}]"
     else
       token.inspect
     end
+  end
+
+  private def read_array(size : Int32?) : Array(String)
+    arr = size ? Array(String).new(size) : Array(String).new
+
+    if size
+      size.times do
+        val = next_value
+        raise ParseError.new("Unexpected EOF while reading array body") unless val
+        arr << val
+      end
+    else
+      @lexer.until_break { |token| arr << to_diagnostic(token) }
+    end
+
+    arr
   end
 
   private def chunks(value : Bytes, chunks : Array(Int32)) : Array(Bytes)
