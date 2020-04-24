@@ -42,7 +42,7 @@ class CBOR::Decoder
   end
 
   def read_tag : Tag
-    read_type(Token::TagT) { |token| token.value }
+    read_type(Token::TagT, ignore_tag: false) { |token| token.value }
   end
 
   def read_bool : Bool
@@ -64,7 +64,7 @@ class CBOR::Decoder
 
   private macro read_type(type, finish_token = true, ignore_tag = true, &block)
     # Skip the tag unless the token we want to read is a tag
-    {% if type != Token::TagT && ignore_tag %}
+    {% if ignore_tag %}
       if @current_token.is_a?(Token::TagT)
         finish_token!
       end

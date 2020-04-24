@@ -40,7 +40,7 @@ def Time.new(decoder : CBOR::Decoder)
     when Int
       Time.unix(num)
     when Float
-      Time.unix_ms((num * 1000).to_i)
+      Time.unix_ms((BigFloat.new(num) * 1_000).to_u64)
     end
   else
     raise CBOR::ParseError.new("Expected tag to have value 0 or 1, got #{tag.value.to_s}")
