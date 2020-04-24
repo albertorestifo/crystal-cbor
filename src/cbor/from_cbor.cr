@@ -19,6 +19,14 @@ end
 
 {% end %}
 
+{% for size in [32, 64] %}
+
+  def Float{{size.id}}.new(decoder : CBOR::Decoder)
+    decoder.read_float.to_f{{size.id}}
+  end
+
+{% end %}
+
 def Bool.new(decoder : CBOR::Decoder)
   decoder.read_bool
 end
