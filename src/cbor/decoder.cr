@@ -1,6 +1,6 @@
 class CBOR::Decoder
   @lexer : Lexer
-  @current_token : Token::T?
+  getter current_token : Token::T?
 
   def initialize(input)
     @lexer = Lexer.new(input)
@@ -70,8 +70,25 @@ class CBOR::Decoder
     end
   end
 
+  def consume_array(&block)
+    read_type(Token::ArrayT, finish_token: false) do |token|
+      read(token.size) { yield }
+    end
+  end
+
   private def finish_token!
     @current_token = @lexer.next_token
+  end
+
+  def read(size : Int32?, &block)
+    if size
+      size.times { yield }
+    else
+      @lexer.until_break do |token|
+        @current_token = token
+        yield
+      end
+    end
   end
 
   private macro read_type(type, finish_token = true, ignore_tag = true, &block)
