@@ -58,6 +58,18 @@ class CBOR::Decoder
     end
   end
 
+  def read_nil : Nil
+    read_type(Token::SimpleValueT) do |token|
+      case token.value
+      when SimpleValue::Null,
+           SimpleValue::Undefined
+        nil
+      else
+        unexpected_token(token, "SimpleValue::Null or SimpleValue::Undefined")
+      end
+    end
+  end
+
   private def finish_token!
     @current_token = @lexer.next_token
   end

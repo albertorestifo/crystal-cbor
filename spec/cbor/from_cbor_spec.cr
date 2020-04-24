@@ -17,6 +17,8 @@ describe "CBOR helpers on basic types" do
        Time::Format::RFC_3339.parse("2013-03-21T20:04:00Z")},
       {Time, Bytes[0xc1, 0x1a, 0x51, 0x4b, 0x67, 0xb0], Time.unix(1363896240)},
       {Time, Bytes[0xc1, 0xfb, 0x41, 0xd4, 0x52, 0xd9, 0xec, 0x20, 0x00, 0x00], Time.unix_ms((BigFloat.new(1363896240.5) * 1000).to_u64)},
+      {Nil, Bytes[0xf6], nil},
+      {Nil, Bytes[0xf7], nil},
     ]
 
     tests.each do |tt|

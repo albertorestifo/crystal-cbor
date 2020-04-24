@@ -23,11 +23,15 @@ def Bool.new(decoder : CBOR::Decoder)
   decoder.read_bool
 end
 
+def Nil.new(decoder : CBOR::Decoder)
+  decoder.read_nil
+end
+
 def Slice.new(decoder : CBOR::Decoder)
   decoder.read_bytes.to_slice
 end
 
-# Reads the CBOR values a time. The value must be surrounded by a time tag as
+# Reads the CBOR values as a time. The value must be surrounded by a time tag as
 # specified by [Section 2.4.1 of RFC 7049][1].
 #
 # [1]: https://tools.ietf.org/html/rfc7049#section-2.4.1
