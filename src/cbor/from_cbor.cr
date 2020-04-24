@@ -19,6 +19,30 @@ end
 
 {% end %}
 
+def Bool.new(decoder : CBOR::Decoder)
+  decoder.read_bool
+end
+
 def Slice.new(decoder : CBOR::Decoder)
   decoder.read_bytes.to_slice
+end
+
+# Reads the CBOR values a time. The value must be surrounded by a time tag as
+# specified by [Section 2.4.1 of RFC 7049][1].
+#
+# [1]: https://tools.ietf.org/html/rfc7049#section-2.4.1
+def Time.new(decoder : CBOR::Decoder)
+  case tag = decoder.read_tag
+  when CBOR::Tag::RFC3339Time
+    Time::Format::RFC_3339.parse(decoder.read_string)
+  when CBOR::Tag::EpochTime
+    case num = decoder.read_num
+    when Int
+      Time.unix(num)
+    when Float
+      Time.unix_ms((num * 1000).to_i)
+    end
+  else
+    raise CBOR::ParseError.new("Expected tag to have value 0 or 1, got #{tag.value.to_s}")
+  end
 end
