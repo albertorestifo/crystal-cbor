@@ -1,3 +1,5 @@
+require "big"
+
 require "./cbor/**"
 
 # TODO: Write documentation for `CBOR`

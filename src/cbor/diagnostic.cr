@@ -53,7 +53,14 @@ class CBOR::Diagnostic
     when Token::SimpleValueT
       token.value.to_diagnostic
     when Token::TagT
-      "#{token.value.value.to_s}(#{next_value})"
+      case token.value
+      when Tag::PositiveBigNum
+        read_big_int
+      when Tag::NegativeBigNum
+        read_big_int(negative: true)
+      else
+        "#{token.value.value.to_s}(#{next_value})"
+      end
     when Token::FloatT
       return "NaN" if token.value.nan?
       return token.value.to_s if token.value.finite?
@@ -101,6 +108,20 @@ class CBOR::Diagnostic
     end
 
     key_pairs
+  end
+
+  private def read_big_int(negative : Bool = false) : String
+    token = @lexer.next_token
+    raise ParseError.new("Unexpected EOF after tag") unless token
+    raise ParseError.new("Unexpected type #{token.class}, want Token::BytesT") unless token.is_a?(Token::BytesT)
+
+    big = BigInt.new(token.value.hexstring, 16)
+    if negative
+      big *= -1
+      big -= 1
+    end
+
+    big.to_s
   end
 
   private def key_value(key : Token::T, value : Token::T) : String
