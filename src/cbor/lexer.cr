@@ -84,7 +84,7 @@ class CBOR::Lexer
     when 0xe0..0xf8
       consume_simple_value(read_size(byte - 0xe0))
     when 0xf9
-      raise ParseError.new("Half-precision floating points are not supported")
+      raise ParseError.new("Half-precision floating point numbers are not supported")
     when 0xfa
       Token::FloatT.new(value: read(Float32))
     when 0xfb

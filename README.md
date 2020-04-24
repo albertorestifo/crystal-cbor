@@ -7,7 +7,6 @@ in Crystal.
 
 ## Features
 
-- Full RFC7049 support
 - Full support for diagnostic notation
 - Assign a field to a type base on the CBOR tag
 - Support for a wide range of IANA CBOR Tags
@@ -18,6 +17,9 @@ in Crystal.
 
 Crystal doesn't have a `Float16` type, so half-precision floating point numbers
 are not supported for the time being.
+
+If you know of a way to solve handle half-precision float, a contribution would
+be really appreciated.
 
 ### Maximum Array/String array/Bytes array length
 

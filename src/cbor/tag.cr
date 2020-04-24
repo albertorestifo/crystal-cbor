@@ -21,6 +21,10 @@ enum CBOR::Tag : UInt32
   RegularExpression
   MimeMessage
   UUID
+  Language
+  Identifier
+
+  CBORWebToken = 61
 
   CBORMarker = 55799
 end
