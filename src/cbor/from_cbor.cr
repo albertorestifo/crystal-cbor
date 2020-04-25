@@ -60,6 +60,19 @@ def Hash.new(decoder : CBOR::Decoder)
   hash
 end
 
+def Enum.new(decoder : CBOR::Decoder)
+  case token = decoder.current_token
+  when CBOR::Token::IntT
+    decoder.finish_token!
+    from_value(token.value)
+  when CBOR::Token::StringT
+    decoder.finish_token!
+    parse(token.value)
+  else
+    decoder.unexpected_token(token, "IntT or StringT")
+  end
+end
+
 # Reads the CBOR values as a time. The value must be surrounded by a time tag as
 # specified by [Section 2.4.1 of RFC 7049][1].
 #

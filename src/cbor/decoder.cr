@@ -82,7 +82,7 @@ class CBOR::Decoder
     end
   end
 
-  private def finish_token!
+  def finish_token!
     @current_token = @lexer.next_token
   end
 
@@ -115,7 +115,7 @@ class CBOR::Decoder
     end
   end
 
-  private def unexpected_token(token, expected = nil)
+  def unexpected_token(token, expected = nil)
     message = "Unexpected token #{token.class}"
     message += " expected #{expected}" if expected
     raise ParseError.new(message)
