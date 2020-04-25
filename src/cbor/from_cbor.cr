@@ -19,6 +19,10 @@ end
 
 {% end %}
 
+def Int128.new(decoder : CBOR::Decoder)
+  decoder.read_int.to_i128
+end
+
 {% for size in [32, 64] %}
 
   def Float{{size.id}}.new(decoder : CBOR::Decoder)
@@ -141,7 +145,26 @@ def Time.new(decoder : CBOR::Decoder)
       Time.unix_ms((BigFloat.new(num) * 1_000).to_u64)
     end
   else
-    raise CBOR::ParseError.new("Expected tag to have value 0 or 1, got #{tag.value.to_s}")
+    raise CBOR::ParseError.new("Expected tag to have value 0 or 1, got #{tag.value}")
+  end
+end
+
+# Reads the CBOR value as a BigInt. The value must be surrounded by a tag with
+# value 2 (positive) or 3 (negative).
+def BigInt.new(decoder : CBOR::Decoder)
+  case tag = decoder.read_tag
+  when CBOR::Tag::PositiveBigNum,
+       CBOR::Tag::NegativeBigNum
+    big = new(decoder.read_bytes.hexstring, 16)
+
+    if tag == CBOR::Tag::NegativeBigNum
+      big *= -1
+      big -= 1
+    end
+
+    big
+  else
+    raise CBOR::ParseError.new("Expected tag to have value 2 or 3, got #{tag.value}")
   end
 end
 
