@@ -38,6 +38,7 @@ describe "CBOR helpers on basic types" do
       {Hash(UInt8, UInt8), Bytes[0xa2, 0x01, 0x02, 0x03, 0x04], Hash(UInt8, UInt8){1 => 2, 3 => 4}},
       {TestEnum, Bytes[0x1a, 0x00, 0x00, 0x00, 0x01], TestEnum::Foo},
       {Tuple(Int8, Int8), Bytes[0x82, 0x01, 0x02], {1_i8, 2_i8}},
+      {NamedTuple(a: UInt8, b: Array(UInt8)), Bytes[0xa2, 0x61, 0x61, 0x01, 0x61, 0x62, 0x82, 0x02, 0x03], {a: 1_u8, b: [2_u8, 3_u8]}},
     ]
 
     tests.each do |tt|

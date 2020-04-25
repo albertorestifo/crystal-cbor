@@ -99,6 +99,32 @@ def Tuple.new(decoder : CBOR::Decoder)
   {% end %}
 end
 
+def NamedTuple.new(decoder : CBOR::Decoder)
+  {% begin %}
+    {% for key in T.keys %}
+      %var{key.id} = nil
+    {% end %}
+
+    decoder.consume_hash do
+      key = decoder.read_string
+      case key
+        {% for key, type in T %}
+          when {{key.stringify}}
+            %var{key.id} = {{type}}.new(decoder)
+        {% end %}
+      else
+        raise CBOR::ParseError.new("Missing attribute: #{key}")
+      end
+    end
+
+    {
+      {% for key, type in T %}
+        {{key}}: %var{key.id}.as({{type}}),
+      {% end %}
+    }
+  {% end %}
+end
+
 # Reads the CBOR values as a time. The value must be surrounded by a time tag as
 # specified by [Section 2.4.1 of RFC 7049][1].
 #
