@@ -182,15 +182,14 @@ def Union.new(decoder : CBOR::Decoder)
     {% if non_primitives.size == 1 %}
       return {{non_primitives[0]}}.new(decoder)
     {% else %}
-      string = pull.read_raw
       {% for type in non_primitives %}
         begin
-          return {{type}}.from_json(string)
+          return {{type}}.new(decoder)
         rescue CBOR::ParseError
           # Ignore
         end
       {% end %}
-      raise CBOR::ParseError.new("Couldn't parse #{self} from #{string}", *location)
+      raise CBOR::ParseError.new("Couldn't parse #{self}")
     {% end %}
   {% end %}
 end
