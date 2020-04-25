@@ -73,6 +73,32 @@ def Enum.new(decoder : CBOR::Decoder)
   end
 end
 
+def Tuple.new(decoder : CBOR::Decoder)
+  {% begin %}
+    token = decoder.current_token
+    unless token.is_a?(CBOR::Token::ArrayT)
+      raise decoder.unexpected_token(token, "ArrayT")
+    end
+
+    size = token.size
+
+    raise CBOR::ParseError.new("Cannot read indefinite size array as Tuple") unless size
+
+    unless {{ @type.size }} <= size
+      raise CBOR::ParseError.new("Expected array with size #{ {{ @type.size }} }, but got #{size}")
+    end
+    decoder.finish_token!
+
+    value = Tuple.new(
+      {% for i in 0...@type.size %}
+        (self[{{i}}].new(decoder)),
+      {% end %}
+    )
+
+    value
+  {% end %}
+end
+
 # Reads the CBOR values as a time. The value must be surrounded by a time tag as
 # specified by [Section 2.4.1 of RFC 7049][1].
 #
