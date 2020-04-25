@@ -45,6 +45,21 @@ def Array.new(decoder : CBOR::Decoder)
   arr
 end
 
+def Set.new(decoder : CBOR::Decoder)
+  set = new
+  decoder.consume_array { set << T.new(decoder) }
+  set
+end
+
+def Hash.new(decoder : CBOR::Decoder)
+  hash = new
+  decoder.consume_hash do
+    k = K.new(decoder)
+    hash[k] = V.new(decoder)
+  end
+  hash
+end
+
 # Reads the CBOR values as a time. The value must be surrounded by a time tag as
 # specified by [Section 2.4.1 of RFC 7049][1].
 #
@@ -66,50 +81,51 @@ def Time.new(decoder : CBOR::Decoder)
 end
 
 def Union.new(decoder : CBOR::Decoder)
-  token = decoder.current_token
-
-  # Optimization: use fast path for primitive types
   {% begin %}
-    # Here we store types that are not primitive types
-    {% non_primitives = [] of Nil %}
-
-    {% for type, index in T %}
-      {% if type == Nil %}
-        return decoder.read_nil if token.is_a?(CBOR::Token::SimpleValueT)
-      {% elsif type == Bool %}
-        return decoder.read_bool if token.is_a?(CBOR::Token::SimpleValueT)
-      {% elsif type == String %}
-        return decoder.read_string if token.is_a?(CBOR::Token::StringT)
-      {% elsif type == Int8 || type == Int16 || type == Int32 || type == Int64 ||
-                 type == UInt8 || type == UInt16 || type == UInt32 || type == UInt64 %}
-        return {{type}}.new(decoder) if token.is_a?(CBOR::Token::IntT)
-      {% elsif type == Float32 || type == Float64 %}
-        return {{type}}.new(decoder) if token.is_a?(CBOR::Token::FloatT)
-        {% unless T.any? { |t| t < Int } %}
-          return {{type}}.new(decoder) if token.is_a?(CBOR::Token::IntT)
-        {% end %}
-      {% else %}
-        {% non_primitives << type %}
-      {% end %}
+    case decoder.current_token
+    {% if T.includes? Nil %}
+    when CBOR::Token::SimpleValueT
+      return decoder.read_nil
     {% end %}
+    {% if T.includes? Bool %}
+    when CBOR::Token::BoolT
+      return decoder.read_bool
+    {% end %}
+    {% if T.includes? String %}
+    when CBOR::Token::StringT
+      return decoder.read_string
+    {% end %}
+    when CBOR::Token::IntT
+    {% type_order = [Int64, UInt64, Int32, UInt32, Int16, UInt16, Int8, UInt8, Float64, Float32] %}
+    {% for type in type_order.select { |t| T.includes? t } %}
+      return {{type}}.new(decoder)
+    {% end %}
+    when CBOR::Token::FloatT
+    {% type_order = [Float64, Float32] %}
+    {% for type in type_order.select { |t| T.includes? t } %}
+      return {{type}}.new(decoder)
+    {% end %}
+    end
+  {% end %}
+
+  {% begin %}
+    {% primitive_types = [Nil, Bool, String] + Number::Primitive.union_types %}
+    {% non_primitives = T.reject { |t| primitive_types.includes? t } %}
 
     # If after traversing all the types we are left with just one
     # non-primitive type, we can parse it directly (no need to use `read_raw`)
     {% if non_primitives.size == 1 %}
       return {{non_primitives[0]}}.new(decoder)
     {% else %}
-      raise "What is this?"
-    #   node = decoder.read_node
-    #   {% for type in non_primitives %}
-    #     unpacker = CBOR::NodeUnpacker.new(node)
-    #     begin
-    #       return {{type}}.new(unpacker)
-    #     rescue e : CBOR::TypeCastError
-    #       # ignore
-    #     end
-    #   {% end %}
-    # {% end %}
+      string = pull.read_raw
+      {% for type in non_primitives %}
+        begin
+          return {{type}}.from_json(string)
+        rescue CBOR::ParseError
+          # Ignore
+        end
+      {% end %}
+      raise CBOR::ParseError.new("Couldn't parse #{self} from #{string}", *location)
+    {% end %}
   {% end %}
-
-  raise CBOR::ParseError.new("Couldn't parse data as " + {{T.stringify}})
 end

@@ -76,12 +76,19 @@ class CBOR::Decoder
     end
   end
 
+  def consume_hash(&block)
+    read_type(Token::MapT, finish_token: false) do |token|
+      read(token.size) { yield }
+    end
+  end
+
   private def finish_token!
     @current_token = @lexer.next_token
   end
 
-  def read(size : Int32?, &block)
+  private def read(size : Int32?, &block)
     if size
+      finish_token!
       size.times { yield }
     else
       @lexer.until_break do |token|
