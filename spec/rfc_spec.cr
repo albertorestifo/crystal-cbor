@@ -3,19 +3,17 @@ require "./spec_helper"
 # All those tests have been exported from the RFC7049 appendix A.
 
 tests = [
-  # Disabled as half-precision floats are not supported:
   { %(0.0), "f9 00 00" },
   { %(-0.0), "f9 80 00" },
   { %(1.0), "f9 3c 00" },
   { %(1.5), "f9 3e 00" },
   { %(65504.0), "f9 7b ff" },
-  # { %(0.00006103515625), "f9 04 00" }, TODO: Something about the presentation
+  { %(6.1035156e-5), "f9 04 00" },
   { %(-4.0), "f9 c4 00" },
-  # { %(5.960464477539063e-8), "f9 00 01" },
-  # { %(Infinity), "f9 7c 00" },
-  # { %(NaN), "f9 7e 00" },
-  # { %(-Infinity), "f9 fc 00" },
-
+  { %(5.9604645e-8), "f9 00 01" },
+  { %(Infinity), "f9 7c 00" },
+  { %(NaN), "f9 7e 00" },
+  { %(-Infinity), "f9 fc 00" },
   { %(0), "00" },
   { %(1), "01" },
   { %(10), "0a" },
@@ -36,7 +34,7 @@ tests = [
   { %(-1000), "39 03 e7" },
   { %(1.1), "fb 3f f1 99 99 99 99 99 9a" },
   { %(100000.0), "fa 47 c3 50 00" },
-  # { %(3.4028234663852886e+38), "fa 7f 7f ff ff" }, TODO: Not precise enough?
+  { %(3.4028235e+38), "fa 7f 7f ff ff" },
   { %(1.0e+300), "fb 7e 37 e4 3c 88 00 75 9c" },
   { %(-4.1), "fb c0 10 66 66 66 66 66 66" },
   { %(Infinity), "fa 7f 80 00 00" },

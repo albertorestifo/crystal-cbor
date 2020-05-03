@@ -5,21 +5,15 @@
 This library implements the [RFC7049: Concise Binary Object Representation (CBOR)][rfc]
 in Crystal.
 
+**WARNING:** This library is still a work in progress.
+
 ## Features
 
 - Full support for diagnostic notation
 - Assign a field to a type base on the CBOR tag
-- Support for a wide range of IANA CBOR Tags
+- Support for a wide range of IANA CBOR Tags (see below)
 
 ## Limitations
-
-### Half-precision floating point is not supported
-
-Crystal doesn't have a `Float16` type, so half-precision floating point numbers
-are not supported for the time being.
-
-If you know of a way to solve handle half-precision float, a contribution would
-be really appreciated.
 
 ### Maximum Array/String array/Bytes array length
 
@@ -49,6 +43,15 @@ require "cbor"
 
 TODO: Write usage instructions here
 
+## Supported tags
+
+All the tags specified in [section 2.4 of RFC 7049][rfc-tags] are supported
+and the values are encoded in the respective Crystal types:
+
+- `Time`
+- `BigInt`
+- `BigFloat`
+
 ## Development
 
 TODO: Write development instructions here
@@ -66,3 +69,4 @@ TODO: Write development instructions here
 - [Alberto Restifo](https://github.com/your-github-user) - creator and maintainer
 
 [rfc]: https://tools.ietf.org/html/rfc7049
+[rfc-tags]: https://tools.ietf.org/html/rfc7049#section-2.4
