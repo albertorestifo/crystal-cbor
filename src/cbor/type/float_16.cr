@@ -10,7 +10,7 @@ def Float32.new(i : UInt16)
   half_man = (i & 0x03FF).to_u32
 
   # Check for an infinity or NaN when all exponent bits set
-  if (i & 0x7C00) == 0x7C00
+  if half_exp == 0x7C00
     # Check for signed infinity if mantissa is zero
     if half_man == 0
       return ((half_sign << 16) | 0x7F80_0000).unsafe_as(Float32)
