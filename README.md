@@ -61,7 +61,9 @@ TODO: Write development instructions here
 The code is hosted on SourceHut and the development happens over the
 [crystal-cbor mailing list][mailing-list].
 
-You can send a patch to: [~arestifo/crystal-cbor@lists.sr.ht](mailto:~arestifo/crystal-cbor@lists.sr.ht).
+- For issues and feature requests, you can [open and issue in the ticket tracker][tickets].
+
+- For code contributions You can send a patch to: [~arestifo/crystal-cbor@lists.sr.ht](mailto:~arestifo/crystal-cbor@lists.sr.ht).
 
 To learn how to use `git send-email`, there is a great step-by-step tutorial
 at [git-send-email.io](https://git-send-email.io/).
@@ -70,3 +72,4 @@ You might also want to read the [mailing list etiquette](https://man.sr.ht/lists
 [rfc]: https://tools.ietf.org/html/rfc7049
 [rfc-tags]: https://tools.ietf.org/html/rfc7049#section-2.4
 [mailing-list]: https://lists.sr.ht/~arestifo/crystal-cbor
+[tickets]: https://todo.sr.ht/~arestifo/crystal-cbor
