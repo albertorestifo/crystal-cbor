@@ -13,16 +13,6 @@ in Crystal.
 - Assign a field to a type base on the CBOR tag
 - Support for a wide range of IANA CBOR Tags (see below)
 
-## Limitations
-
-### Maximum Array/String array/Bytes array length
-
-The spec allows for the maximum length of arrays, string arrays and bytes array
-to be a `UInt64`.
-
-While this library supports lengths expressed as a `UInt64`, it must not exceed
-`Int32::MAX`.
-
 ## Installation
 
 1. Add the dependency to your `shard.yml`:
@@ -52,21 +42,31 @@ and the values are encoded in the respective Crystal types:
 - `BigInt`
 - `BigDecimal`
 
+## Limitations
+
+### Maximum Array/String array/Bytes array length
+
+The spec allows for the maximum length of arrays, string arrays and bytes array
+to be a `UInt64`.
+
+While this library supports lengths expressed as a `UInt64`, it must not exceed
+`Int32::MAX`.
+
 ## Development
 
 TODO: Write development instructions here
 
 ## Contributing
 
-1. Fork it (<https://github.com/your-github-user/cbor/fork>)
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+The code is hosted on SourceHut and the development happens over the
+[crystal-cbor mailing list][mailing-list].
 
-## Contributors
+You can send a patch to: [~arestifo/crystal-cbor@lists.sr.ht](mailto:~arestifo/crystal-cbor@lists.sr.ht).
 
-- [Alberto Restifo](https://github.com/your-github-user) - creator and maintainer
+To learn how to use `git send-email`, there is a great step-by-step tutorial
+at [git-send-email.io](https://git-send-email.io/).
+You might also want to read the [mailing list etiquette](https://man.sr.ht/lists.sr.ht/etiquette.md).
 
 [rfc]: https://tools.ietf.org/html/rfc7049
 [rfc-tags]: https://tools.ietf.org/html/rfc7049#section-2.4
+[mailing-list]: https://lists.sr.ht/~arestifo/crystal-cbor
