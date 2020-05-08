@@ -149,12 +149,20 @@ def Time.new(decoder : CBOR::Decoder)
   end
 end
 
-# Reads the CBOR value as a BigInt. The value must be surrounded by a tag with
-# value 2 (positive) or 3 (negative).
+# Reads the CBOR value as a BigInt.
+# If the next token is an integer, then the integer will be transformed as a
+# BigInt, otherwhise the value must be surrounded by a tag with value 2
+# (positive) or 3 (negative).
 def BigInt.new(decoder : CBOR::Decoder)
-  case tag = decoder.read_tag
-  when CBOR::Tag::PositiveBigNum,
-       CBOR::Tag::NegativeBigNum
+  case token = decoder.current_token
+  when CBOR::Token::TagT
+    decoder.finish_token!
+
+    tag = token.value
+    unless tag == CBOR::Tag::PositiveBigNum || tag == CBOR::Tag::NegativeBigNum
+      raise CBOR::ParseError.new("Expected tag to have value 2 or 3, got #{tag.value}")
+    end
+
     big = new(decoder.read_bytes.hexstring, 16)
 
     if tag == CBOR::Tag::NegativeBigNum
@@ -163,8 +171,37 @@ def BigInt.new(decoder : CBOR::Decoder)
     end
 
     big
+  when CBOR::Token::IntT
+    decoder.finish_token!
+    new(token.value)
   else
-    raise CBOR::ParseError.new("Expected tag to have value 2 or 3, got #{tag.value}")
+    decoder.unexpected_token(token, "IntT or TagT")
+  end
+end
+
+# Reads the CBOR value as a BigDecimal.
+# If the next token is a flaot, then it'll be transformed to a BigDecimal,
+# otherwhise the value must be correctly tagged with value 4 (decimal fraction)
+# or 5 (big float).
+def BigDecimal.new(decoder : CBOR::Decoder)
+  case token = decoder.current_token
+  when CBOR::Token::TagT
+    decoder.finish_token!
+
+    tag = token.value
+    unless tag == CBOR::Tag::Decimal || tag == CBOR::Tag::BigFloat
+      raise CBOR::ParseError.new("Expected tag to have value 4 or 5, got #{tag.value}")
+    end
+
+    exponent, matissa = Tuple(Int128, BigInt).new(decoder)
+
+    base = tag == CBOR::Tag::Decimal ? 10.0 : 2.0
+    e = base**exponent
+    new(matissa) * new(e)
+  when CBOR::Token::FloatT
+    new(token.value)
+  else
+    decoder.unexpected_token(token, "FloatT or TagT")
   end
 end
 

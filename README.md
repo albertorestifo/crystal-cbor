@@ -50,7 +50,7 @@ and the values are encoded in the respective Crystal types:
 
 - `Time`
 - `BigInt`
-- `BigFloat`
+- `BigDecimal`
 
 ## Development
 
