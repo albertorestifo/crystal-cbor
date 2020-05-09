@@ -10,10 +10,10 @@ enum CBOR::Tag : UInt32
   CSOEMac
   CSOESign
 
-  ConvertBase64URL = 21
-  ConvertBase64
-  ConvertBase16
-  CBOREncoded
+  ExpectBase64URL = 21
+  ExpectBase64
+  ExpectBase16
+  CBORDataItem
 
   URI               = 32
   Base64URL
@@ -26,5 +26,5 @@ enum CBOR::Tag : UInt32
 
   CBORWebToken = 61
 
-  CBORMarker = 55799
+  SelfDescribeCBOR = 55799
 end
