@@ -1,3 +1,7 @@
 {
-    "crystal-lang.mainFile": "${workspaceRoot}/src/cbor.cr"
+    "crystal-lang.mainFile": "${workspaceRoot}/src/cbor.cr",
+    "cSpell.words": [
+        "CBOR",
+        "IANA"
+    ]
 }
