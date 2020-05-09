@@ -83,14 +83,8 @@ class CBOR::Diagnostic
   private def read_array(size : Int32?) : Array(String)
     arr = size ? Array(String).new(size) : Array(String).new
 
-    if size
-      size.times do
-        val = next_value
-        raise ParseError.new("Unexpected EOF while reading array body") unless val
-        arr << val
-      end
-    else
-      @lexer.until_break { |token| arr << to_diagnostic(token) }
+    consume_array_body(size) do |token|
+      arr << to_diagnostic(token)
     end
 
     arr
@@ -100,14 +94,42 @@ class CBOR::Diagnostic
   # correctly formatted in the diagnostic notation
   private def read_hash(size : Int32?) : Array(String)
     key_pairs = Array(String).new
-
-    if size
-      size.times { key_pairs << key_value(*@lexer.next_pair) }
-    else
-      @lexer.pairs_until_break { |pairs| key_pairs << key_value(*pairs) }
-    end
-
+    consume_map_body(size) { |pairs| key_pairs << key_value(*pairs) }
     key_pairs
+  end
+
+  private def consume_array_body(size : Int32?, &block : Token::T ->)
+    if size
+      size.times do
+        token = @lexer.next_token
+        raise ParseError.new("Unexpected EOF while reading array body") unless token
+        yield token
+      end
+    else
+      loop do
+        token = @lexer.next_token
+        raise ParseError.new("Unexpected EOF while reading array body") unless token
+        break if token.is_a?(Token::BreakT)
+        yield token
+      end
+    end
+  end
+
+  private def consume_map_body(size : Int32?, &block : Tuple(Token::T, Token::T) ->)
+    if size
+      size.times { yield @lexer.next_pair }
+    else
+      loop do
+        key = @lexer.next_token
+        raise ParseError.new("Unexpected EOF while reading map key") unless key
+        break if key.is_a?(Token::BreakT)
+
+        value = @lexer.next_token
+        raise ParseError.new("Unexpected EOF while reading map value") unless value
+
+        yield Tuple.new(key, value)
+      end
+    end
   end
 
   private def read_big_int(negative : Bool = false) : String

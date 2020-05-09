@@ -7,6 +7,7 @@ module CBOR::Token
   record MapT, size : Int32? = nil
   record TagT, value : Tag
   record SimpleValueT, value : SimpleValue
+  record BreakT
 
   alias T = IntT |
             FloatT |
@@ -15,5 +16,6 @@ module CBOR::Token
             ArrayT |
             MapT |
             TagT |
-            SimpleValueT
+            SimpleValueT |
+            BreakT
 end

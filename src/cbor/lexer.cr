@@ -1,12 +1,9 @@
 class CBOR::Lexer
-  BREAK = 0xff
-
   def self.new(slice : Bytes)
     new IO::Memory.new(slice)
   end
 
   @eof : Bool = false
-  @current_byte : UInt8 = 0
 
   def initialize(@io : IO)
   end
@@ -29,32 +26,6 @@ class CBOR::Lexer
       token
     end
     Tuple.new(pairs[0], pairs[1])
-  end
-
-  def until_break(&block : Token::T ->)
-    loop do
-      byte = next_byte
-      raise ParseError.new("unexpected EOF while searching for break") unless byte
-      break if byte == BREAK
-      yield decode(byte)
-    end
-  end
-
-  # Read a pair of values until a break is reached
-  def pairs_until_break(&block : Tuple(Token::T, Token::T) ->)
-    loop do
-      key_byte = next_byte
-      raise ParseError.new("Unexpected EOF while searching for break") unless key_byte
-      break if key_byte == BREAK
-
-      key = decode(key_byte)
-      raise ParseError.new("Unexpected EOF while reading key in pairs") unless key
-
-      value = next_token
-      raise ParseError.new("Unexpected EOF while reading value in pairs") unless value
-
-      yield Tuple.new(key, value)
-    end
   end
 
   private def decode(byte : UInt8) : Token::T
@@ -89,8 +60,10 @@ class CBOR::Lexer
       Token::FloatT.new(value: read(Float32))
     when 0xfb
       Token::FloatT.new(value: read(Float64))
+    when 0xff
+      Token::BreakT.new
     else
-      raise ParseError.new("Unexpected first byte 0x#{byte.to_s(16)}")
+      raise ParseError.new("Unexpected byte 0x#{byte.to_s(16)}")
     end
   end
 
@@ -124,6 +97,16 @@ class CBOR::Lexer
     end
 
     Token::StringT.new(value: value, chunks: chunks)
+  end
+
+  private def until_break(&block : Token::T ->)
+    loop do
+      token = next_token
+      raise ParseError.new("Unexpected EOF while searching for 0xff (break)") unless token
+      break if token.is_a?(Token::BreakT)
+
+      yield token
+    end
   end
 
   # Reads the size for the next token type

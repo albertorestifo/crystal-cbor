@@ -230,6 +230,8 @@ def Union.new(decoder : CBOR::Decoder)
     {% for type in type_order.select { |t| T.includes? t } %}
       return {{type}}.new(decoder)
     {% end %}
+    else
+      # This case check is non-exaustive on purpose
     end
   {% end %}
 

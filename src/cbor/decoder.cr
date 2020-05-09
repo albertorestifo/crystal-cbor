@@ -71,14 +71,14 @@ class CBOR::Decoder
   end
 
   def consume_array(&block)
-    read_type(Token::ArrayT, finish_token: false) do |token|
-      read(token.size) { yield }
+    read_type(Token::ArrayT) do |token|
+      consume_sequence(token.size) { yield }
     end
   end
 
   def consume_hash(&block)
-    read_type(Token::MapT, finish_token: false) do |token|
-      read(token.size) { yield }
+    read_type(Token::MapT) do |token|
+      consume_sequence(token.size) { yield }
     end
   end
 
@@ -86,32 +86,36 @@ class CBOR::Decoder
     @current_token = @lexer.next_token
   end
 
-  private def read(size : Int32?, &block)
+  private def consume_sequence(size : Int32?, &block)
     if size
-      finish_token!
       size.times { yield }
     else
-      @lexer.until_break do |token|
-        @current_token = token
+      until @current_token.is_a?(Token::BreakT)
         yield
       end
     end
   end
 
   private macro read_type(type, finish_token = true, ignore_tag = true, &block)
-    # Skip the tag unless the token we want to read is a tag
-    {% if ignore_tag %}
-      if @current_token.is_a?(Token::TagT)
-        finish_token!
-      end
-    {% end %}
+    begin
+      # Skip the tag unless the token we want to read is a tag
+      {% if ignore_tag %}
+        if @current_token.is_a?(Token::TagT)
+          finish_token!
+        end
+      {% end %}
 
-    case token = @current_token
-    when {{type}}
-      {% if finish_token %}finish_token!{% end %}
-      {{ block.body }}
-    else
-      unexpected_token(token, {{type.stringify.split("::").last}})
+      case token = @current_token
+      when {{type}}
+        {% if finish_token %}
+          finish_token!
+        {% end %}
+        {{ block.body }}
+      else
+        unexpected_token(token, {{type.stringify.split("::").last}})
+      end
+    rescue err
+      raise CBOR::ParseError.new("{{type}} -> #{err}")
     end
   end
 
