@@ -213,7 +213,7 @@ def Union.new(decoder : CBOR::Decoder)
       return decoder.read_nil
     {% end %}
     {% if T.includes? Bool %}
-    when CBOR::Token::BoolT
+    when CBOR::Token::SimpleValueT
       return decoder.read_bool
     {% end %}
     {% if T.includes? String %}
