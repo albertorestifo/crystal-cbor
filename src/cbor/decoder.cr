@@ -91,6 +91,23 @@ class CBOR::Decoder
     end
   end
 
+  def skip
+    case token = @current_token
+    when Token::IntT,
+         Token::FloatT,
+         Token::BytesT,
+         Token::StringT,
+         Token::TagT,
+         Token::SimpleValueT
+      finish_token!
+    when Token::ArrayT, Token::MapT
+      finish_token!
+      consume_sequence(token.size) { }
+    else
+      unexpected_token(token)
+    end
+  end
+
   def finish_token!
     @current_token = @lexer.next_token
   end
