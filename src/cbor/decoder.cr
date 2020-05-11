@@ -60,13 +60,18 @@ class CBOR::Decoder
 
   def read_nil : Nil
     read_type(Token::SimpleValueT) do |token|
-      case token.value
-      when SimpleValue::Null,
-           SimpleValue::Undefined
-        nil
-      else
-        unexpected_token(token, "SimpleValue::Null or SimpleValue::Undefined")
-      end
+      return nil if token.value.is_nil?
+
+      unexpected_token(token, "SimpleValue::Null or SimpleValue::Undefined")
+    end
+  end
+
+  def read_nil_or
+    if @current_token.is_a?(Token::SimpleValueT) && @current_token.value.is_nil?
+      finish_token!
+      nil
+    else
+      yield
     end
   end
 
@@ -74,6 +79,10 @@ class CBOR::Decoder
     read_type(Token::ArrayT) do |token|
       consume_sequence(token.size) { yield }
     end
+  end
+
+  def read_begin_hash
+    read_type(Token::MapT, finish_token: false) { |token| }
   end
 
   def consume_hash(&block)

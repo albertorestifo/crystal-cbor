@@ -18,4 +18,13 @@ enum CBOR::SimpleValue : UInt8
       "simple(#{self.value.to_s})"
     end
   end
+
+  def is_nil? : Bool
+    case self
+    when Null, Undefined
+      true
+    else
+      false
+    end
+  end
 end
