@@ -21,5 +21,7 @@ module CBOR
                UInt32 |
                Int64 |
                UInt64 |
-               Int128
+               Int128 |
+               Float32 |
+               Float64
 end

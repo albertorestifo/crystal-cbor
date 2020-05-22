@@ -19,6 +19,18 @@ enum CBOR::SimpleValue : UInt8
     end
   end
 
+  def to_t : Bool | Nil
+    case self
+    when False
+      false
+    when True
+      true
+    when Null,
+         Undefined
+      nil
+    end
+  end
+
   def is_nil? : Bool
     case self
     when Null, Undefined

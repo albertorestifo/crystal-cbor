@@ -7,6 +7,40 @@ class CBOR::Decoder
     @current_token = @lexer.next_token
   end
 
+  def read_value : Type
+    case token = @current_token
+    when Token::TagT
+      finish_token!
+      read_value
+    when Token::StringT
+      finish_token!
+      token.value
+    when Token::IntT
+      finish_token!
+      token.value
+    when Token::FloatT
+      finish_token!
+      token.value
+    when Token::BytesT
+      finish_token!
+      token.value
+    when Token::SimpleValueT
+      token.value.to_t
+    when Token::ArrayT
+      finish_token!
+      arr = Array(Type).new
+      consume_sequence(token.size) { arr << read_value }
+      arr
+    when Token::MapT
+      finish_token!
+      map = Hash(Type, Type).new
+      consume_sequence(token.size) { map[read_value] = read_value }
+      map
+    else
+      unexpected_token(token)
+    end
+  end
+
   def read_string : String
     case token = @current_token
     when Token::StringT
@@ -88,23 +122,6 @@ class CBOR::Decoder
   def consume_hash(&block)
     read_type(Token::MapT) do |token|
       consume_sequence(token.size) { yield }
-    end
-  end
-
-  def skip
-    case token = @current_token
-    when Token::IntT,
-         Token::FloatT,
-         Token::BytesT,
-         Token::StringT,
-         Token::TagT,
-         Token::SimpleValueT
-      finish_token!
-    when Token::ArrayT, Token::MapT
-      finish_token!
-      consume_sequence(token.size) { }
-    else
-      unexpected_token(token)
     end
   end
 

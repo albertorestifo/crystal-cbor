@@ -79,13 +79,10 @@ module CBOR
   # A.from_json(%<{"a":1}>) # => A(@a=1, @b=1.0) #TODO ----- FIX THIS!!!!
   # ```
   #
-  # ### Extensions: `JSON::Serializable::Strict` and `JSON::Serializable::Unmapped`.
+  # ### Extensions: `CBOR::Serializable::Unmapped`.
   #
-  # If the `JSON::Serializable::Strict` module is included, unknown properties in the JSON
-  # document will raise a parse exception. By default the unknown properties
-  # are silently ignored.
-  # If the `JSON::Serializable::Unmapped` module is included, unknown properties in the JSON
-  # document will be stored in a `Hash(String, JSON::Any)`. On serialization, any keys inside json_unmapped
+  # If the `CBOR::Serializable::Unmapped` module is included, unknown properties in the CBOR
+  # document will be stored in a `Hash(String, CBOR::Type)`. On serialization, any keys inside cbor_unmapped
   # will be serialized and appended to the current json object.
   # ```
   # require "json"
@@ -181,9 +178,7 @@ module CBOR
         begin
           decoder.read_begin_hash
         rescue exc : ::CBOR::ParseError
-          # TODO: Improve error message, use dedicated class
-          raise "Error in mapping decoding when reading being hash: #{exc.message}"
-          # raise ::JSON::MappingError.new(exc.message, self.class.to_s, nil, *%location, exc)
+          raise ::CBOR::SerializationError.new(exc.message, self.class.to_s, nil)
         end
 
         decoder.consume_hash do
@@ -204,9 +199,7 @@ module CBOR
 
                 {% if value[:nilable] || value[:has_default] %} } {% end %}
               rescue exc : ::CBOR::ParseError
-                # TODO: Improve error message, use dedicated class
-                raise "Error in mapping decoding when consuming hash: #{exc.message}"
-                # raise ::JSON::MappingError.new(exc.message, self.class.to_s, {{value[:key]}}, *%key_location, exc)
+                raise ::CBOR::SerializationError.new(exc.message, self.class.to_s, {{value[:key]}})
               end
           {% end %}
           else
@@ -217,9 +210,7 @@ module CBOR
         {% for name, value in properties %}
           {% unless value[:nilable] || value[:has_default] %}
             if %var{name}.nil? && !%found{name} && !::Union({{value[:type]}}).nilable?
-                # TODO: Improve error message, use dedicated class
-                raise "Missing CBOR attribute"
-              # raise ::JSON::MappingError.new("Missing JSON attribute: {{value[:key].id}}", self.class.to_s, nil, *%location, nil)
+              raise ::CBOR::SerializationError.new("Missing CBOR attribute: {{value[:key].id}}", self.class.to_s, nil)
             end
           {% end %}
 
@@ -247,7 +238,7 @@ module CBOR
     end
 
     protected def on_unknown_cbor_attribute(decoder, key)
-      decoder.skip
+      raise ::CBOR::SerializationError.new("Unknown CBOR attribute: #{key}", self.class.to_s, nil)
     end
 
     # protected def on_to_cbor(cbor : ::CBOR::Builder)
@@ -322,32 +313,24 @@ module CBOR
     #   {% end %}
     # end
 
-    module Strict
+    module Unmapped
+      @[CBOR::Field(ignore: true)]
+      property cbor_unmapped = Hash(String, ::CBOR::Type).new
+
       protected def on_unknown_cbor_attribute(decoder, key)
-        # TODO: Improve error
-        raise "Unknown CBOR attribute: #{key}"
-        # raise ::JSON::MappingError.new("Unknown JSON attribute: #{key}", self.class.to_s, nil, *key_location, nil)
+        cbor_unmapped[key] = begin
+          decoder.read_value
+        rescue exc : ::CBOR::ParseError
+          raise ::CBOR::SerializationError.new(exc.message, self.class.to_s, key)
+        end
       end
+
+      #   protected def on_to_json(json)
+      #     json_unmapped.each do |key, value|
+      #       json.field(key) { value.to_json(json) }
+      #     end
+      #   end
     end
-
-    # module Unmapped
-    #   @[CBOR::Field(ignore: true)]
-    #   property cbor_unmapped = Hash(String, ::CBOR::Type).new
-
-    #   protected def on_unknown_cbor_attribute(decoder, key)
-    #     json_unmapped[key] = begin
-    #       JSON::Any.new(pull)
-    #     rescue exc : ::JSON::ParseException
-    #       raise ::JSON::MappingError.new(exc.message, self.class.to_s, key, *key_location, exc)
-    #     end
-    #   end
-
-    #   protected def on_to_json(json)
-    #     json_unmapped.each do |key, value|
-    #       json.field(key) { value.to_json(json) }
-    #     end
-    #   end
-    # end
 
     # Tells this class to decode CBOR by using a field as a discriminator.
     #

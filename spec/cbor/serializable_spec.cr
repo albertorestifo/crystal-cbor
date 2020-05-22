@@ -23,6 +23,19 @@ class ExampleC
   property b : String
 end
 
+class ExampleStrict
+  include CBOR::Serializable
+
+  property a : Int32
+end
+
+class ExampleUnmapped
+  include CBOR::Serializable
+  include CBOR::Serializable::Unmapped
+
+  property a : Int32
+end
+
 describe CBOR::Serializable do
   describe "rfc examples" do
     describe %(example {_ "a": 1, "b": [_ 2, 3]}) do
@@ -52,6 +65,23 @@ describe CBOR::Serializable do
         result[0].as(String).should eq("a")
         result[1].as(ExampleC).b.should eq("c")
       end
+    end
+  end
+
+  describe "by default it's strict" do
+    it "errors on missing fields" do
+      expect_raises(CBOR::ParseError) do
+        ExampleStrict.from_cbor(Bytes[0xbf, 0x61, 0x61, 0x01, 0x61, 0x62, 0x9f, 0x02, 0x03, 0xff, 0xff])
+      end
+    end
+  end
+
+  describe CBOR::Serializable::Unmapped do
+    it "adds missing fields to the map" do
+      result = ExampleUnmapped.from_cbor(Bytes[0xbf, 0x61, 0x61, 0x01, 0x61, 0x62, 0x9f, 0x02, 0x03, 0xff, 0xff])
+
+      result.a.should eq(1)
+      result.cbor_unmapped.should eq({"b" => [2, 3]})
     end
   end
 end
