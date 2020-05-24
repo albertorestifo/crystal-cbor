@@ -68,7 +68,7 @@ describe CBOR::Serializable do
     end
   end
 
-  describe "by default it's strict" do
+  describe "strict by default" do
     it "errors on missing fields" do
       expect_raises(CBOR::ParseError) do
         ExampleStrict.from_cbor(Bytes[0xbf, 0x61, 0x61, 0x01, 0x61, 0x62, 0x9f, 0x02, 0x03, 0xff, 0xff])

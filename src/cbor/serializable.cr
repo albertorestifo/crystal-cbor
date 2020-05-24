@@ -64,6 +64,7 @@ module CBOR
   # * **key**: the value of the key in the json object (by default the name of the instance variable)
   # * **converter**: specify an alternate type for parsing and generation. The converter must define `from_cbor(CBOR::Decoder)` and `to_cbor(value, CBOR::Builder)` as class methods. Examples of converters are `Time::Format` and `Time::EpochConverter` for `Time`.
   # * **presence**: if `true`, a `@{{key}}_present` instance variable will be generated when the key was present (even if it has a `null` value), `false` by default
+  # * **emit_null**: if `true`, emits a `null` value for nilable property (by default nulls are not emitted)
   # * **nil_as_undefined**: if `true`, when the value is `nil`, it is emitted as `undefined` (by default `nil` are encoded as `null`)
   #
   # Deserialization also respects default values of variables:
@@ -98,15 +99,16 @@ module CBOR
   # ```
   #
   #
-  # ### Class annotation `JSON::Serializable::Options`
+  # ### Class annotation `CBOR::Serializable::Options`
   #
   # supported properties:
   # * **emit_nulls**: if `true`, emits a `null` value for all nilable properties (by default nulls are not emitted)
+  # * **nil_as_undefined**: if `true`, emits a `nil` value as undefined (by default nil emits `null`)
   #
   # ```
   # require "json"
   #
-  # @[JSON::Serializable::Options(emit_nulls: true)]
+  # @[CBOR::Serializable::Options(emit_nulls: true)]
   # class A
   #   include JSON::Serializable
   #   @a : Int32?
@@ -241,77 +243,60 @@ module CBOR
       raise ::CBOR::SerializationError.new("Unknown CBOR attribute: #{key}", self.class.to_s, nil)
     end
 
-    # protected def on_to_cbor(cbor : ::CBOR::Builder)
-    # end
+    protected def on_to_cbor(cbor : ::CBOR::Encoder)
+    end
 
-    # def to_json(json : ::JSON::Builder)
-    #   {% begin %}
-    #     {% options = @type.annotation(::JSON::Serializable::Options) %}
-    #     {% emit_nulls = options && options[:emit_nulls] %}
+    def to_cbor(cbor : ::CBOR::Encoder)
+      {% begin %}
+        {% options = @type.annotation(::CBOR::Serializable::Options) %}
+        {% emit_nulls = options && options[:emit_nulls] %}
+        {% nil_as_undefined = options && options[:nil_as_undefined] %}
 
-    #     {% properties = {} of Nil => Nil %}
-    #     {% for ivar in @type.instance_vars %}
-    #       {% ann = ivar.annotation(::JSON::Field) %}
-    #       {% unless ann && ann[:ignore] %}
-    #         {%
-    #           properties[ivar.id] = {
-    #             type:      ivar.type,
-    #             key:       ((ann && ann[:key]) || ivar).id.stringify,
-    #             root:      ann && ann[:root],
-    #             converter: ann && ann[:converter],
-    #             emit_null: (ann && (ann[:emit_null] != nil) ? ann[:emit_null] : emit_nulls),
-    #           }
-    #         %}
-    #       {% end %}
-    #     {% end %}
+        {% properties = {} of Nil => Nil %}
+        {% for ivar in @type.instance_vars %}
+          {% ann = ivar.annotation(::CBOR::Field) %}
+          {% unless ann && ann[:ignore] %}
+            {%
+              properties[ivar.id] = {
+                type:             ivar.type,
+                key:              ((ann && ann[:key]) || ivar).id.stringify,
+                converter:        ann && ann[:converter],
+                emit_null:        (ann && (ann[:emit_null] != nil) ? ann[:emit_null] : emit_nulls),
+                nil_as_undefined: (ann && (ann[:nil_as_undefined] != nil) ? ann[:nil_as_undefined] : nil_as_undefined),
+              }
+            %}
+          {% end %}
+        {% end %}
 
-    #     json.object do
-    #       {% for name, value in properties %}
-    #         _{{name}} = @{{name}}
+        cbor.object do
+          {% for name, value in properties %}
+            _{{name}} = @{{name}}
 
-    #         {% unless value[:emit_null] %}
-    #           unless _{{name}}.nil?
-    #         {% end %}
+            {% unless value[:emit_null] %}
+              unless _{{name}}.nil?
+            {% end %}
 
-    #           json.field({{value[:key]}}) do
-    #             {% if value[:root] %}
-    #               {% if value[:emit_null] %}
-    #                 if _{{name}}.nil?
-    #                   nil.to_json(json)
-    #                 else
-    #               {% end %}
+              # Write the key of the map
+              write({{value[:key]}})
 
-    #               json.object do
-    #                 json.field({{value[:root]}}) do
-    #             {% end %}
+              {% if value[:converter] %}
+                if _{{name}}
+                  {{ value[:converter] }}.to_cbor(_{{name}}, cbor)
+                else
+                  cbor.write(nil, use_undefined: value[:nil_as_undefined])
+                end
+              {% else %}
+                _{{name}}.to_cbor(cbor)
+              {% end %}
 
-    #             {% if value[:converter] %}
-    #               if _{{name}}
-    #                 {{ value[:converter] }}.to_json(_{{name}}, json)
-    #               else
-    #                 nil.to_json(json)
-    #               end
-    #             {% else %}
-    #               _{{name}}.to_json(json)
-    #             {% end %}
-
-    #             {% if value[:root] %}
-    #               {% if value[:emit_null] %}
-    #                 end
-    #               {% end %}
-    #                 end
-    #               end
-    #             {% end %}
-    #           end
-
-    #         {% unless value[:emit_null] %}
-    #           end
-    #         {% end %}
-    #       {% end %}
-    #       on_to_json(json)
-    #     end
-    #   {% end %}
-    # end
+            {% unless value[:emit_null] %}
+              end
+            {% end %}
+          {% end %}
+          on_to_cbor(cbor)
+        end
+      {% end %}
+    end
 
     module Unmapped
       @[CBOR::Field(ignore: true)]
@@ -325,11 +310,12 @@ module CBOR
         end
       end
 
-      #   protected def on_to_json(json)
-      #     json_unmapped.each do |key, value|
-      #       json.field(key) { value.to_json(json) }
-      #     end
-      #   end
+      protected def on_to_cbor(cbor : ::CBOR::Encoder)
+        cbor_unmapped.each do |key, value|
+          write(key)
+          value.to_cbor(cbor)
+        end
+      end
     end
 
     # Tells this class to decode CBOR by using a field as a discriminator.
