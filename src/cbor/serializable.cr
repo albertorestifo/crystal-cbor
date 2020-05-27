@@ -25,15 +25,14 @@ module CBOR
   #   property location : Location?
   # end
   #
-  # XXXX -----> TODO: CHANGE HERE!!
-  # house = House.from_json(%({"address": "Crystal Road 1234", "location": {"lat": 12.3, "lng": 34.5}}))
+  # house = House.from_cbor(Bytes[191, 103, 97, 100, 100, 114, 101, 115, 115, 113, 67, 114, 121, 115, 116, 97, 108, 32, 82, 111, 97, 100, 32, 49, 50, 51, 52, 104, 108, 111, 99, 97, 116, 105, 111, 110, 191, 99, 108, 97, 116, 251, 64, 40, 153, 153, 153, 153, 153, 154, 99, 108, 110, 103, 251, 64, 65, 64, 0, 0, 0, 0, 0, 255, 255])
   # house.address  # => "Crystal Road 1234"
   # house.location # => #<Location:0x10cd93d80 @latitude=12.3, @longitude=34.5>
-  # house.to_json  # => %({"address":"Crystal Road 1234","location":{"lat":12.3,"lng":34.5}})
+  # house.to_cbor  # => Bytes[191, 103, 97, 100, 100, 114, 101, 115, 115, 113, 67, 114, 121, 115, 116, 97, 108, 32, 82, 111, 97, 100, 32, 49, 50, 51, 52, 104, 108, 111, 99, 97, 116, 105, 111, 110, 191, 99, 108, 97, 116, 251, 64, 40, 153, 153, 153, 153, 153, 154, 99, 108, 110, 103, 251, 64, 65, 64, 0, 0, 0, 0, 0, 255, 255]
   #
-  # houses = Array(House).from_json(%([{"address": "Crystal Road 1234", "location": {"lat": 12.3, "lng": 34.5}}]))
+  # houses = Array(House).from_json(Bytes[129, 191, 103, 97, 100, 100, 114, 101, 115, 115, 113, 67, 114, 121, 115, 116, 97, 108, 32, 82, 111, 97, 100, 32, 49, 50, 51, 52, 104, 108, 111, 99, 97, 116, 105, 111, 110, 191, 99, 108, 97, 116, 251, 64, 40, 153, 153, 153, 153, 153, 154, 99, 108, 110, 103, 251, 64, 65, 64, 0, 0, 0, 0, 0, 255, 255])
   # houses.size    # => 1
-  # houses.to_json # => %([{"address":"Crystal Road 1234","location":{"lat":12.3,"lng":34.5}}])
+  # houses.to_json # => Bytes[129, 191, 103, 97, 100, 100, 114, 101, 115, 115, 113, 67, 114, 121, 115, 116, 97, 108, 32, 82, 111, 97, 100, 32, 49, 50, 51, 52, 104, 108, 111, 99, 97, 116, 105, 111, 110, 191, 99, 108, 97, 116, 251, 64, 40, 153, 153, 153, 153, 153, 154, 99, 108, 110, 103, 251, 64, 65, 64, 0, 0, 0, 0, 0, 255, 255]
   # ```
   #
   # ### Usage
@@ -77,7 +76,7 @@ module CBOR
   #   @b : Float64 = 1.0
   # end
   #
-  # A.from_json(%<{"a":1}>) # => A(@a=1, @b=1.0) #TODO ----- FIX THIS!!!!
+  # A.from_cbor({"a" => 1}.to_cbor) # => A(@a=1, @b=1.0)
   # ```
   #
   # ### Extensions: `CBOR::Serializable::Unmapped`.
@@ -86,7 +85,7 @@ module CBOR
   # document will be stored in a `Hash(String, CBOR::Type)`. On serialization, any keys inside cbor_unmapped
   # will be serialized and appended to the current json object.
   # ```
-  # require "json"
+  # require "cbor"
   #
   # struct A
   #   include JSON::Serializable
@@ -277,7 +276,7 @@ module CBOR
             {% end %}
 
               # Write the key of the map
-              write({{value[:key]}})
+              cbor.write({{value[:key]}})
 
               {% if value[:converter] %}
                 if _{{name}}
@@ -312,7 +311,7 @@ module CBOR
 
       protected def on_to_cbor(cbor : ::CBOR::Encoder)
         cbor_unmapped.each do |key, value|
-          write(key)
+          cbor.write(key)
           value.to_cbor(cbor)
         end
       end

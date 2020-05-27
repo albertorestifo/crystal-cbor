@@ -101,7 +101,8 @@ class CBOR::Decoder
   end
 
   def read_nil_or
-    if @current_token.is_a?(Token::SimpleValueT) && @current_token.value.is_nil?
+    token = @current_token
+    if token.is_a?(Token::SimpleValueT) && token.value.is_nil?
       finish_token!
       nil
     else

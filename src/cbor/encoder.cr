@@ -170,8 +170,9 @@ class CBOR::Encoder
   end
 
   def to_slice : Bytes
-    raise Error.new("to slice not implemented for io type: #{typeof(io)}") unless io.responds_to?(:to_slice)
-    @io.to_slice
+    io = @io
+    raise "to slice not implemented for io type: #{typeof(io)}" unless io.responds_to?(:to_slice)
+    io.to_slice
   end
 
   def to_s : String
