@@ -146,7 +146,7 @@ module CBOR
 
       macro inherited
         def self.new(decoder : ::CBOR::Decoder)
-          new_from_cbor_decoder(pull)
+          new_from_cbor_decoder(decoder)
         end
       end
     end
