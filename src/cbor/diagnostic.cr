@@ -8,6 +8,10 @@ class CBOR::Diagnostic
     @lexer = Lexer.new(input)
   end
 
+  def self.to_s(bytes : Bytes) : String
+    self.new(bytes).to_s
+  end
+
   # Reads the content of the IO and prints out a diagnostic string
   # represation of the input.
   def to_s : String

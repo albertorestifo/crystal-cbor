@@ -74,25 +74,35 @@ module Time::Format::RFC_3339
   # [RFC 7049 section 2.4.1](https://tools.ietf.org/html/rfc7049#section-2.4.1).
   def self.to_cbor(value : Time, encoder : CBOR::Encoder)
     encoder.write(CBOR::Tag::RFC3339Time)
-    self.format(self, fraction_digits: 0).to_cbor(encoder)
+    value.format(value, fraction_digits: 0).to_cbor(encoder)
+  end
+end
+
+module Time::EpochConverter
+  # Emits the time as a tagged unix timestamp, asp specified by
+  # [RFC 7049 section 2.4.1](https://tools.ietf.org/html/rfc7049#section-2.4.1).
+  #
+  def self.to_cbor(value : Time, encoder : CBOR::Encoder)
+    encoder.write(CBOR::Tag::EpochTime)
+    value.to_unix.to_cbor(encoder)
   end
 end
 
 struct Time
-  # Emits the time as a tagged unix timestamp, asp specified by
+  # Encodes the time as a properly tagged CBOR string as specified by
   # [RFC 7049 section 2.4.1](https://tools.ietf.org/html/rfc7049#section-2.4.1).
   #
-  # If you would like to encode the time as a tagged RFC 3339 string isntead,
-  # you can tag the field with the `Time::Format::RFC_3339` instead:
+  # If you would like to encode it as a unix timestamp, you can instead specify
+  # `Time::EpochConverter`:
   #
   # ```
   # class Foo
-  #   @[CBOR::Filed(converter: Time::Format::RFC_3339)]
+  #   @[CBOR::Filed(converter: Time::EpochConverter)]
   #   property created_at : Time
   # end
   # ```
   def to_cbor(encoder : CBOR::Encoder)
-    encoder.write(CBOR::Tag::EpochTime)
-    self.to_unix.to_cbor(encoder)
+    encoder.write(CBOR::Tag::RFC3339Time)
+    self.format(self, fraction_digits: 0).to_cbor(encoder)
   end
 end

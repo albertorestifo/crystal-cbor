@@ -115,19 +115,48 @@ describe CBOR::Serializable do
 
   describe "documentation examples" do
     describe "house example" do
-      houses = [House.new(address: "Crystal Road 1234", location: Location.new(latitude: 12.3, longitude: 34.5))]
-      cbor_houses_bytes = Bytes[129, 191, 103, 97, 100, 100, 114, 101, 115, 115, 113, 67, 114, 121, 115, 116, 97, 108, 32, 82, 111, 97, 100, 32, 49, 50, 51, 52, 104, 108, 111, 99, 97, 116, 105, 111, 110, 191, 99, 108, 97, 116, 251, 64, 40, 153, 153, 153, 153, 153, 154, 99, 108, 110, 103, 251, 64, 65, 64, 0, 0, 0, 0, 0, 255, 255]
+      data = {
+        "address"  => "Crystal Road 1234",
+        "location" => {"lat" => 12.3, "lng" => 34.5},
+      }
+      bytes = data.to_cbor
 
-      it "encodes to cbor" do
-        cbor = houses.to_cbor
-        cbor.should eq(cbor_houses_bytes)
+      it "has the correct starting data" do
+        CBOR::Diagnostic.to_s(bytes).should eq(%({"address": "Crystal Road 1234", "location": {"lat": 12.3, "lng": 34.5}}))
       end
 
-      it "decodes form cbor" do
-        decoded = Array(House).from_cbor(cbor_houses_bytes)
+      it "decodes from CBOR" do
+        house = House.from_cbor(bytes)
 
-        decoded.size.should eq(1)
-        house = decoded[0]
+        house.address.should eq("Crystal Road 1234")
+        loc = house.location
+        loc.should_not be_nil
+        loc.not_nil!.latitude.should eq(12.3)
+        loc.not_nil!.longitude.should eq(34.5)
+      end
+
+      it "encodes to CBOR" do
+        cbor = House.from_cbor(bytes).to_cbor
+        CBOR::Diagnostic.to_s(cbor).should eq(%({_ "address": "Crystal Road 1234", "location": {_ "lat": 12.3, "lng": 34.5}}))
+      end
+    end
+
+    describe "houses array" do
+      data = [{
+        "address"  => "Crystal Road 1234",
+        "location" => {"lat" => 12.3, "lng" => 34.5},
+      }]
+      bytes = data.to_cbor
+
+      it "has the correct starting data" do
+        CBOR::Diagnostic.to_s(bytes).should eq(%([{"address": "Crystal Road 1234", "location": {"lat": 12.3, "lng": 34.5}}]))
+      end
+
+      it "decodes from CBOR" do
+        houses = Array(House).from_cbor(bytes)
+
+        houses.size.should eq(1)
+        house = houses[0]
         house.address.should eq("Crystal Road 1234")
 
         loc = house.location
@@ -135,11 +164,28 @@ describe CBOR::Serializable do
         loc.not_nil!.latitude.should eq(12.3)
         loc.not_nil!.longitude.should eq(34.5)
       end
+
+      it "encodes to CBOR" do
+        cbor = Array(House).from_cbor(bytes).to_cbor
+
+        CBOR::Diagnostic.to_s(cbor).should eq(%([{_ "address": "Crystal Road 1234", "location": {_ "lat": 12.3, "lng": 34.5}}]))
+      end
     end
 
     describe "default values example" do
       it "respects default values" do
         A.from_cbor({"a" => 1}.to_cbor).inspect.should eq("A(@a=1, @b=1.0)")
+      end
+    end
+
+    describe "Unmapped extension" do
+      it "decodes with the values in cbor_unmapped" do
+        res = ExampleUnmapped.from_cbor({"a" => 1, "b" => 2}.to_cbor)
+
+        res.a.should eq(1)
+        res.cbor_unmapped.should eq({"b" => 2})
+
+        CBOR::Diagnostic.to_s(res.to_cbor).should eq(%({_ "a": 1, "b": 2}))
       end
     end
   end
