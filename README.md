@@ -5,8 +5,6 @@
 This library implements the [RFC7049: Concise Binary Object Representation (CBOR)][rfc]
 in Crystal.
 
-**WARNING:** This library is still a work in progress.
-
 - [Installation](#installation)
 - [Usage](#usage)
 - [Supported Tags](#supported-tags)
