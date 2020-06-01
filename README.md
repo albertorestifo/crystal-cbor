@@ -9,7 +9,6 @@ in Crystal.
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [API](./docs/api.md)
 - [Supported Tags](#supported-tags)
 - [Limitations](#limitations)
 - [Community](#community)
@@ -130,7 +129,7 @@ end
 
 Deserialization also respects default values of variables:
 
-```
+```crystal
 require "cbor"
 
 struct A
@@ -150,7 +149,7 @@ the CBOR document will be stored in a `Hash(String, CBOR::Type)`.
 On serialization, any keys inside `cbor_unmapped` will be serialized and appended
 to the current cbor map.
 
-```
+```crystal
 require "cbor"
 
 struct A
@@ -173,12 +172,12 @@ supported properties:
 - **nil_as_undefined**: if `true`, emits a `nil` value as undefined
   (by default nil emits `null`)
 
-```
-require "json"
+```crystal
+require "cbor"
 
 @[CBOR::Serializable::Options(emit_nulls: true)]
 class A
-  include JSON::Serializable
+  include CBOR::Serializable
   @a : Int32?
 end
 ```
@@ -204,7 +203,11 @@ While this library supports lengths expressed as a `UInt64`, it must not exceed
 
 ## Community
 
-TODO: Write development instructions here
+If you're stuck and need help, if you have any questions, or if you simply want
+to stay up to date with the latest news and developments, you can subscribe to
+the [crystal-cbor mailing list][mailing-list].
+
+If you found an issue, you can [open an issue on the ticket tracker][tickets].
 
 ## Contributing
 

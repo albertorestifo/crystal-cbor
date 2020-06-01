@@ -2,7 +2,6 @@ require "big"
 
 require "./cbor/**"
 
-# TODO: Write documentation for `CBOR`
 module CBOR
   VERSION = "0.1.0"
 
