@@ -93,9 +93,9 @@ class CBOR::Encoder
     value.each { |item| write(item) }
   end
 
-  def write(value : Tag)
-    write_size(0xc0, value)
-    write_value(value)
+  def write(tag : Tag)
+    compressed = compress(tag.value)
+    write(compressed, 0xc0)
   end
 
   def write_array_start(size)

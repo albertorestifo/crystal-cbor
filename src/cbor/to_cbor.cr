@@ -74,7 +74,7 @@ module Time::Format::RFC_3339
   # [RFC 7049 section 2.4.1](https://tools.ietf.org/html/rfc7049#section-2.4.1).
   def self.to_cbor(value : Time, encoder : CBOR::Encoder)
     encoder.write(CBOR::Tag::RFC3339Time)
-    value.format(value, fraction_digits: 0).to_cbor(encoder)
+    format(value, fraction_digits: 0).to_cbor(encoder)
   end
 end
 
@@ -103,6 +103,30 @@ struct Time
   # ```
   def to_cbor(encoder : CBOR::Encoder)
     encoder.write(CBOR::Tag::RFC3339Time)
-    self.format(self, fraction_digits: 0).to_cbor(encoder)
+    encoder.write(to_rfc3339)
   end
 end
+
+# struct BigInt
+#   # Encodes the value a bytes arrya tagged with the CBOR tag 2 or 3, as specified
+#   # in [RFC 7049 Section 2.4.2](https://tools.ietf.org/html/rfc7049#section-2.4.2).
+#   def to_cbor(encoder : CBOR::Encoder)
+#     encoded_value = BigInt.new(self)
+#     if encoded_value >= 0
+#       encoder.write(CBOR::Tag::PositiveBigNum)
+#     else
+#       encoder.write(CBOR::Tag::NegativeBigNum)
+#       encoded_value *= -1
+#       encoded_value += 1
+#     end
+
+#     io = IO::Memory.new
+#     encoded_value.to_io(io, IO::ByteFormat::NetworkEndian)
+#     encoder.write(io.to_slice)
+#   end
+# end
+
+# struct BigDecimal
+#   def to_cbor(encoder : CBOR::Encoder)
+#   end
+# end
