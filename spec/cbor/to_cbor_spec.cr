@@ -41,7 +41,7 @@ describe "to_cbor" do
     tests.each do |tt|
       type, bytes, value = tt
 
-      it "encodes #{value.inspect} of type #{type.to_s}" do
+      it "encodes #{value.inspect} of type #{type}" do
         res = value.to_cbor
         res.hexdump.should eq(bytes.hexdump)
       end

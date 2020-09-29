@@ -48,7 +48,7 @@ class CBOR::Encoder
     return write(value.to_u64) if value >= 0
 
     # When it's negative, transform it into a positive value and write the
-    # resulting unsigled int with an offset
+    # resulting unsigned int with an offset
     positive_value = -(value + 1)
     write(positive_value.to_u64, 0x20)
   end

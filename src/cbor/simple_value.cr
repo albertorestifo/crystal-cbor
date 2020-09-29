@@ -15,7 +15,7 @@ enum CBOR::SimpleValue : UInt8
     when Undefined
       "undefined"
     else
-      "simple(#{self.value.to_s})"
+      "simple(#{self.value})"
     end
   end
 

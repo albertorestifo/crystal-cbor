@@ -1,5 +1,5 @@
 # Reads a CBOR input into a diagnostic string.
-# This consumes the IO and is mostly usedful to tests again the example
+# This consumes the IO and is mostly useful to tests again the example
 # provided in the RFC and ensuring a correct functioning of the `CBOR::Lexer`.
 class CBOR::Diagnostic
   @lexer : Lexer
@@ -63,7 +63,7 @@ class CBOR::Diagnostic
       when Tag::NegativeBigNum
         read_big_int(negative: true)
       else
-        "#{token.value.value.to_s}(#{next_value})"
+        "#{token.value.value}(#{next_value})"
       end
     when Token::FloatT
       return "NaN" if token.value.nan?

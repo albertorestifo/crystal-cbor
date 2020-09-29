@@ -79,7 +79,7 @@ module Time::Format::RFC_3339
 end
 
 module Time::EpochConverter
-  # Emits the time as a tagged unix timestamp, asp specified by
+  # Emits the time as a tagged unix timestamp, as specified by
   # [RFC 7049 section 2.4.1](https://tools.ietf.org/html/rfc7049#section-2.4.1).
   #
   def self.to_cbor(value : Time, encoder : CBOR::Encoder)
@@ -108,7 +108,7 @@ struct Time
 end
 
 # struct BigInt
-#   # Encodes the value a bytes arrya tagged with the CBOR tag 2 or 3, as specified
+#   # Encodes the value a bytes array tagged with the CBOR tag 2 or 3, as specified
 #   # in [RFC 7049 Section 2.4.2](https://tools.ietf.org/html/rfc7049#section-2.4.2).
 #   def to_cbor(encoder : CBOR::Encoder)
 #     encoded_value = BigInt.new(self)

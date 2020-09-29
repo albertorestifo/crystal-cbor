@@ -164,7 +164,7 @@ class CBOR::Lexer
   end
 
   private def consume_simple_value(id) : Token::SimpleValueT
-    raise ParseError.new("Invalid simple value #{id.to_s}") if id > 255
+    raise ParseError.new("Invalid simple value #{id}") if id > 255
     Token::SimpleValueT.new(value: SimpleValue.new(id.to_u8))
   end
 
@@ -176,7 +176,7 @@ class CBOR::Lexer
     {% conv = %w(to_i8 to_i16 to_i32 to_i64 to_i128) %}
 
     {% for uint, index in uints %}
-      # Reads the `{{uint.id}}` as a negative integer, returning the samllest
+      # Reads the `{{uint.id}}` as a negative integer, returning the smallest
       # integer capable of containing the value.
       def to_negative_int(value : {{uint.id}})
         int = begin

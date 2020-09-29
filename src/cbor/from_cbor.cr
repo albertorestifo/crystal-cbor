@@ -180,7 +180,7 @@ def BigInt.new(decoder : CBOR::Decoder)
 end
 
 # Reads the CBOR value as a BigDecimal.
-# If the next token is a flaot, then it'll be transformed to a BigDecimal,
+# If the next token is a float, then it'll be transformed to a BigDecimal,
 # otherwhise the value must be correctly tagged with value 4 (decimal fraction)
 # or 5 (big float).
 def BigDecimal.new(decoder : CBOR::Decoder)
@@ -231,7 +231,7 @@ def Union.new(decoder : CBOR::Decoder)
       return {{type}}.new(decoder)
     {% end %}
     else
-      # This case check is non-exaustive on purpose
+      # This case check is non-exhaustive on purpose
     end
   {% end %}
 

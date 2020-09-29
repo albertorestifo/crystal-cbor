@@ -71,7 +71,7 @@ describe CBOR::Encoder do
         bytes_arr = hex_string.split.map(&.to_u8(16))
         want_bytes = Bytes.new(bytes_arr.to_unsafe, bytes_arr.size)
 
-        it "econdes #{value.to_s} to #{want_bytes.hexstring}" do
+        it "encodes #{value} to #{want_bytes.hexstring}" do
           res = IO::Memory.new
 
           encoder = CBOR::Encoder.new(res)
