@@ -6,7 +6,7 @@ class Object
   end
 
   def to_cbor(io : IO)
-    encoder = CBOR::Encoder.new
+    encoder = CBOR::Encoder.new(io)
     to_cbor(encoder)
     self
   end

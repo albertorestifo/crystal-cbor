@@ -58,4 +58,13 @@ describe "to_cbor" do
       encoder.to_slice.hexdump.should eq(Bytes[0xc1, 0x1a, 0x51, 0x4b, 0x67, 0xb0].hexdump)
     end
   end
+
+  describe "encodes to an IO" do
+    it "encodes a string" do
+      io = IO::Memory.new
+      "a".to_cbor(io)
+
+      io.to_slice.should eq(Bytes[0x61, 0x61])
+    end
+  end
 end
