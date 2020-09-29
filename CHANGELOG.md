@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2020-09-29
+
+### Fixed
+
+- Bug when passing an `IO` to `to_cbor`
+
 ## [0.2.0] - 2020-06-18
 
 ### Changed
