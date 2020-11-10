@@ -243,6 +243,10 @@ module CBOR
       raise ::CBOR::SerializationError.new("Unknown CBOR attribute: #{key}", self.class.to_s, nil)
     end
 
+    protected def get_cbor_unmapped
+      {} of String => ::CBOR::Type
+    end
+
     protected def on_to_cbor(cbor : ::CBOR::Encoder)
     end
 
@@ -268,9 +272,28 @@ module CBOR
           {% end %}
         {% end %}
 
-        cbor.object do
-          {% for name, value in properties %}
+        # Compute the size of the final list of properties to serialize.
+        # This allows a more compact encoding, and a faster decoding.
+        nb_properties_to_serialize = 0
+        {% for name, value in properties %}
             _{{name}} = @{{name}}
+          {% unless value[:emit_null] %}
+            unless _{{name}}.nil?
+              nb_properties_to_serialize += 1
+            end
+          {% else %}
+            nb_properties_to_serialize += 1
+          {% end %}
+        {% end %}
+
+        nb_properties_to_serialize += get_cbor_unmapped.size
+
+
+        {% if properties.size > 0 %}
+          cbor.write_object_start nb_properties_to_serialize
+
+          {% for name, value in properties %}
+              _{{name}} = @{{name}}
 
             {% unless value[:emit_null] %}
               unless _{{name}}.nil?
@@ -279,22 +302,22 @@ module CBOR
               # Write the key of the map
               cbor.write({{value[:key]}})
 
-              {% if value[:converter] %}
-                if _{{name}}
-                  {{ value[:converter] }}.to_cbor(_{{name}}, cbor)
-                else
-                  cbor.write(nil, use_undefined: value[:nil_as_undefined])
-                end
-              {% else %}
-                _{{name}}.to_cbor(cbor)
-              {% end %}
+            {% if value[:converter] %}
+              if _{{name}}
+                {{ value[:converter] }}.to_cbor(_{{name}}, cbor)
+              else
+                cbor.write(nil, use_undefined: value[:nil_as_undefined])
+              end
+            {% else %}
+              _{{name}}.to_cbor(cbor)
+            {% end %}
 
             {% unless value[:emit_null] %}
               end
             {% end %}
           {% end %}
           on_to_cbor(cbor)
-        end
+        {% end %}
       {% end %}
     end
 
@@ -308,6 +331,10 @@ module CBOR
         rescue exc : ::CBOR::ParseError
           raise ::CBOR::SerializationError.new(exc.message, self.class.to_s, key)
         end
+      end
+
+      protected def get_cbor_unmapped
+        cbor_unmapped
       end
 
       protected def on_to_cbor(cbor : ::CBOR::Encoder)

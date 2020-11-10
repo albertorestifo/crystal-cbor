@@ -66,7 +66,7 @@ end
 
 describe CBOR::Serializable do
   describe "rfc examples" do
-    describe %(example {_ "a": 1, "b": [_ 2, 3]}) do
+    describe %(example {"a": 1, "b": [2, 3]}) do
       it "decodes from cbor" do
         result = ExampleA.from_cbor(Bytes[0xbf, 0x61, 0x61, 0x01, 0x61, 0x62, 0x9f, 0x02, 0x03, 0xff, 0xff])
 
@@ -75,7 +75,7 @@ describe CBOR::Serializable do
       end
     end
 
-    describe %(example {_ "Fun": true, "Amt": -2}) do
+    describe %(example {"Fun": true, "Amt": -2}) do
       it "decodes from cbor" do
         result = ExampleB.from_cbor(Bytes[0xbf, 0x63, 0x46, 0x75, 0x6e, 0xf5, 0x63, 0x41, 0x6d, 0x74, 0x21, 0xff])
 
@@ -84,7 +84,7 @@ describe CBOR::Serializable do
       end
     end
 
-    describe %(example ["a", {_ "b": "c"}]) do
+    describe %(example ["a", {"b": "c"}]) do
       it "decodes from cbor" do
         result = Array(String | ExampleC).from_cbor(Bytes[0x82, 0x61, 0x61, 0xbf, 0x61, 0x62, 0x61, 0x63, 0xff])
 
@@ -137,7 +137,7 @@ describe CBOR::Serializable do
 
       it "encodes to CBOR" do
         cbor = House.from_cbor(bytes).to_cbor
-        CBOR::Diagnostic.to_s(cbor).should eq(%({_ "address": "Crystal Road 1234", "location": {_ "lat": 12.3, "lng": 34.5}}))
+        CBOR::Diagnostic.to_s(cbor).should eq(%({"address": "Crystal Road 1234", "location": {"lat": 12.3, "lng": 34.5}}))
       end
     end
 
@@ -168,7 +168,7 @@ describe CBOR::Serializable do
       it "encodes to CBOR" do
         cbor = Array(House).from_cbor(bytes).to_cbor
 
-        CBOR::Diagnostic.to_s(cbor).should eq(%([{_ "address": "Crystal Road 1234", "location": {_ "lat": 12.3, "lng": 34.5}}]))
+        CBOR::Diagnostic.to_s(cbor).should eq(%([{"address": "Crystal Road 1234", "location": {"lat": 12.3, "lng": 34.5}}]))
       end
     end
 
@@ -185,7 +185,7 @@ describe CBOR::Serializable do
         res.a.should eq(1)
         res.cbor_unmapped.should eq({"b" => 2})
 
-        CBOR::Diagnostic.to_s(res.to_cbor).should eq(%({_ "a": 1, "b": 2}))
+        CBOR::Diagnostic.to_s(res.to_cbor).should eq(%({"a": 1, "b": 2}))
       end
     end
   end

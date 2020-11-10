@@ -54,7 +54,7 @@ house = House.from_cbor(cbor)
 house.address                 # => "Crystal Road 1234"
 house.location                # => #<Location:0x10cd93d80 @latitude=12.3, @longitude=34.5>
 bytes = house.to_cbor         # => Bytes[...]
-CBOR::Diagnostic.to_s(bytes)  # => {_ "address": "Crystal Road 1234", "location": {_ "lat": 12.3, "lng": 34.5}}
+CBOR::Diagnostic.to_s(bytes)  # => {"address": "Crystal Road 1234", "location": {"lat": 12.3, "lng": 34.5}}
 
 data_array = [data]
 cbor_array = data_array.to_cbor # => Bytes[...]
@@ -63,7 +63,7 @@ CBOR::Diagnostic.to_s(cbor)     # => [{"address": "Crystal Road 1234", "location
 houses = Array(House).from_cbor(cbor_array)
 houses.size                  # => 1
 bytes = houses.to_cbor       # => Bytes[...]
-CBOR::Diagnostic.to_s(bytes) # => [{_ "address": "Crystal Road 1234", "location": {_ "lat": 12.3, "lng": 34.5}}]
+CBOR::Diagnostic.to_s(bytes) # => [{"address": "Crystal Road 1234", "location": {"lat": 12.3, "lng": 34.5}}]
 ```
 
 ## Installation
@@ -158,7 +158,7 @@ end
 
 a = A.from_cbor({"a" => 1, "b" => 2}.to_cbor) # => A(@cbor_unmapped={"b" => 2}, @a=1)
 bytes = a.to_cbor                             # => Bytes[...]
-CBOR::Diagnostic.to_s(bytes)                  # => {_ "a": 1, "b": 2}
+CBOR::Diagnostic.to_s(bytes)                  # => {"a": 1, "b": 2}
 ```
 
 ### Class annotation `CBOR::Serializable::Options`
