@@ -25,6 +25,7 @@ class CBOR::Decoder
       finish_token!
       token.value
     when Token::SimpleValueT
+      finish_token!
       token.value.to_t
     when Token::ArrayT
       finish_token!
