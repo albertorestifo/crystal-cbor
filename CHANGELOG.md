@@ -8,8 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+
 - The length of objects is now pre-computed, reducing the size of the encoded
-  object and speeding up the decoing process. Thanks to Karchnu for his contribution.
+  object and speeding up the decoing process. Thanks to Karchnu for their contribution.
+
+## Fixed
+
+- When parsing a SimleValue the parser would wrongly loop. Tahnks to Karchnu for their contriubtion.
 
 ## [0.2.1] - 2020-09-29
 
