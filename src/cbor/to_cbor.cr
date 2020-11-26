@@ -1,3 +1,5 @@
+require "uuid"
+
 class Object
   def to_cbor : Bytes
     encoder = CBOR::Encoder.new
@@ -130,3 +132,15 @@ end
 #   def to_cbor(encoder : CBOR::Encoder)
 #   end
 # end
+
+struct UUID
+  # Returns UUID as CBOR value.
+  #
+  # ```
+  # uuid = UUID.new("87b3042b-9b9a-41b7-8b15-a93d3f17025e")
+  # uuid.to_cbor
+  # ```
+  def to_cbor(cbor : CBOR::Encoder)
+    cbor.write(@bytes.to_slice)
+  end
+end
