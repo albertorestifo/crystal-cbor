@@ -1,3 +1,5 @@
+require "uuid"
+
 def Object.from_cbor(string_or_io)
   parser = CBOR::Decoder.new(string_or_io)
   new(parser)
@@ -254,4 +256,33 @@ def Union.new(decoder : CBOR::Decoder)
       raise CBOR::ParseError.new("Couldn't parse #{self}")
     {% end %}
   {% end %}
+end
+
+struct UUID
+  # Creates UUID from CBOR using `CBOR::Decoder`.
+  #
+  # ```
+  # require "cbor"
+  #
+  # class Example
+  #   include CBOR::Serializable
+  #
+  #   property id : UUID
+  # end
+  #
+  # hash = {"id" => "ba714f86-cac6-42c7-8956-bcf5105e1b81"}
+  # example = Example.from_cbor hash.to_cbor
+  # example.id # => UUID(ba714f86-cac6-42c7-8956-bcf5105e1b81)
+  # ```
+  def self.new(pull : CBOR::Decoder)
+    # Either the UUID was encoded as String or bytes (smaller).
+    case pull.current_token
+    when CBOR::Token::StringT
+      new(pull.read_string)
+    when CBOR::Token::BytesT
+      new(pull.read_bytes)
+    else
+      raise "trying to get an UUID, but CBOR value isn't a string nor bytes: #{pull.current_token}"
+    end
+  end
 end
