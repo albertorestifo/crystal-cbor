@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for UUID encoding/decoding
+
 ### Changed
 
 - The length of objects is now pre-computed, reducing the size of the encoded
@@ -14,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
-- When parsing a SimleValue the parser would wrongly loop. Tahnks to Karchnu for their contriubtion.
+- When parsing a SimpleValue the parser would wrongly loop. Tahnks to Karchnu for their contriubtion.
 
 ## [0.2.1] - 2020-09-29
 
