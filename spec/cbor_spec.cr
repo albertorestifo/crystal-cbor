@@ -16,8 +16,8 @@ end
 class House
   include CBOR::Serializable
 
-  property address   : String
-  property location  : Location?
+  property address : String
+  property location : Location?
 
   def initialize(@address)
   end
@@ -28,10 +28,10 @@ class Person
   include CBOR::Serializable::Unmapped
 
   property name : String?
+
   def initialize(@name = nil)
   end
 end
-
 
 describe CBOR do
   describe "basics: to_cbor" do
@@ -98,7 +98,7 @@ describe CBOR do
     it "Person#from_cbor with unmapped values" do
       h = Hash(String | Int32, String | Int32).new
       h["name"] = "Alice"
-      h["age"]  = 30
+      h["age"] = 30
       h["size"] = 160
       alice = Person.from_cbor h.to_cbor
       alice.to_cbor.hexstring.should eq "a3646e616d6565416c69636563616765181e6473697a6518a0"
@@ -112,4 +112,3 @@ describe CBOR do
     end
   end
 end
-
