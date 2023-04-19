@@ -64,6 +64,16 @@ struct A
   @b : Float64 = 1.0
 end
 
+struct Headers
+  include CBOR::Serializable
+
+  @[CBOR::Field(key: 1)]
+  getter one : Int32
+  @[CBOR::Field(key: 4)]
+  getter four : Bytes
+  getter address : Bytes
+end
+
 describe CBOR::Serializable do
   describe "rfc examples" do
     describe %(example {"a": 1, "b": [2, 3]}) do
@@ -187,6 +197,17 @@ describe CBOR::Serializable do
 
         CBOR::Diagnostic.to_s(res.to_cbor).should eq(%({"a": 1, "b": 2}))
       end
+    end
+  end
+
+  describe "numeric keys example" do
+    it "parses objects with numeric keys" do
+      headers = Bytes[163, 1, 39, 4, 88, 32, 93, 155, 209, 93, 43, 36, 29, 66, 174, 118, 124, 101, 62, 74, 170, 46, 169, 227, 178, 210, 218, 102, 240, 224, 157, 19, 185, 105, 29, 18, 240, 51, 103, 97, 100, 100, 114, 101, 115, 115, 88, 57, 1, 228, 116, 11, 38, 144, 121, 29, 229, 235, 173, 0, 234, 85, 93, 140, 108, 49, 49, 142, 169, 128, 153, 158, 183, 177, 58, 36, 185, 85, 194, 158, 26, 190, 164, 89, 60, 82, 102, 11, 144, 182, 250, 32, 179, 229, 164, 43, 16, 86, 102, 82, 42, 63, 20, 175, 41]
+
+      result = Headers.from_cbor(headers)
+      result.one.should eq(-8)
+      result.four.hexstring.should start_with("5d9bd15d2b241d42")
+      result.address.hexstring.should start_with("01e4740b2690791d")
     end
   end
 end
