@@ -50,8 +50,11 @@ class CBOR::Decoder
     when Token::BytesT
       finish_token!
       String.new(token.value)
+    when Token::IntT
+      finish_token!
+      token.value.to_s
     else
-      unexpected_token(token, "StringT or BytesT")
+      unexpected_token(token, "StringT, BytesT or IntT")
     end
   end
 
