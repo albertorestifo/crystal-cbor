@@ -148,7 +148,7 @@ class CBOR::Encoder
     when 0x0000_0000..0xffff_ffff
       write_byte(offset + 0x1a)
       write_value(bytesize.to_u32)
-    when 0x0000_0000_0000_0000..0xffff_ffff_ffff_ffff
+    when 0x0000_0000_0000_0000..0xffff_ffff_ffff_ffffu64
       write_byte(offset + 0x1b)
       write_value(bytesize.to_u64)
     else
