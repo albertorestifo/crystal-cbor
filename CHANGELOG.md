@@ -7,12 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2023-04-20
+
 ### Added
 
 - Support for UUID encoding/decoding
 
 ### Changed
 
+- Now using Crystal 1.8
 - The length of objects is now pre-computed, reducing the size of the encoded
   object and speeding up the decoing process. Thanks to Karchnu for their contribution.
 
